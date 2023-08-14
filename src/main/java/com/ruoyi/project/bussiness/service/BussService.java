@@ -1,6 +1,7 @@
 package com.ruoyi.project.bussiness.service;
 
 
+import com.ruoyi.common.utils.LogUtils;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.annotation.Log;
 import com.ruoyi.framework.aspectj.lang.enums.BusinessType;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Hash;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -27,6 +29,7 @@ import org.web3j.tx.Transfer;
 import org.web3j.utils.Convert;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -81,8 +84,8 @@ public class BussService {
         try {
             Long[] longs = getTimeStampByDayRestful(start, end);
             List sepcGasLastDay = getSepcGasLastDay(longs[0], longs[1]);
-            boolean res = airdropGasForList(sepcGasLastDay,longs[0],longs[1]);
-            if (res) {
+            String res = airdropGasForList(sepcGasLastDay,longs[0],longs[1]);
+            if (res.equals("空投成功")) {
                 return sepcGasLastDay;
             } else {
                 return r;
@@ -109,16 +112,19 @@ public class BussService {
     @ResponseBody
     @ApiOperation(value = "giveGasLastDay", notes = "按照当前日期的前一天的时间段来空投")
     public boolean giveGasLastDay() {
-        List r = new ArrayList();
-        r.add("空投失败");
         try {
             Date date = DateUtils.addDays(new Date(), -1);
             System.out.println(date.getTime());
             Long start = date.getTime() / 1000;
             Long end = new Date().getTime() / 1000;
             List list = getSepcGasLastDay(start, end);
-            boolean res = airdropGasForList(list,start,end);
-            return res;
+            String res = airdropGasForList(list,start,end);
+            if (res.equals("空投成功")) {
+                return true;
+            } else {
+                LogUtils.ERROR_LOG.error("空投失败，失败原因：" + res);
+                return false;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -154,7 +160,7 @@ public class BussService {
     }
 
 
-    public boolean airdropGasForList(List<Map<String, Object>> maps,Long start,Long end) {
+    public String airdropGasForList(List<Map<String, Object>> maps,Long start,Long end) {
 
         String url = config.getConfig("RPC_URL","http://127.0.0.1:8545");
         String privateKey = config.getConfig("PRIVATE_KEY","0x46279b753d1397d9ff7a3df97501c4fa4316312620a32a00c2551b81b8be7326");
@@ -168,12 +174,12 @@ public class BussService {
             System.out.println("credentials:" + credentials.getAddress());
         }catch (Exception e){
             System.out.println("web3j = Web3j.build(new HttpService(url));");
-            return false;
+            return "Web3未空或者私钥不正确";
         }
 
         if(maps == null || maps.size() == 0){
             System.out.println("maps == null || maps.size() == 0");
-            return false;
+            return "空投列表为空";
         }
 
         // 定义两个list，存放所有的from_addr和gas
@@ -193,16 +199,32 @@ public class BussService {
 
         if(from_addr_list.size() != gas_list.size()){
             System.out.println("from_addr_list.size() != gas_list.size()");
-            return false;
+            return "空投列表异常，数量不匹配";
         }
         if(from_addr_list.size() == 0){
             System.out.println("from_addr_list.size() == 0");
-            return false;
+            return "空投列表为空";
         }
         if(web3j == null || credentials == null){
             System.out.println("web3j == null || credentials == null");
-            return false;
+            return "Web3j或者私钥不正确";
         }
+        // 将gas累加，查询余额，如果余额小于gas累加，就不空投，返回false
+        BigDecimal totalGas = new BigDecimal(0);
+        for (BigDecimal gas : gas_list) {
+            totalGas = totalGas.add(gas);
+        }
+        try {
+            BigInteger balance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getBalance();
+            if(balance.compareTo(totalGas.toBigInteger()) < 0){
+                System.out.println("账户余额不足，无法空投");
+                return "账户余额不足，无法空投";
+            }
+        }catch (Exception e){
+            System.out.println("查询余额时候，异常！");
+            return "查询余额时候，异常！";
+        }
+
         int count = 0;
         try {
             for (int i = 0; i < from_addr_list.size(); i++) {
@@ -214,8 +236,6 @@ public class BussService {
                     System.out.println("addr:"+addr+" batch:"+batch+" 已经空投过了");
                     count++;
                     continue;
-                }else {
-                    System.out.println("addr:"+addr+" batch:"+batch+" 还没有空投过");
                 }
 
                 String hash = airdropToAddr(web3j, credentials, addr, gas);
@@ -232,11 +252,17 @@ public class BussService {
                 airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
             }
             // 如果count等于from_addr_list.size()，说明所有的地址都已经空投过了，返回false
-            return count != from_addr_list.size();
-            // return true;
+            boolean r = count != from_addr_list.size();
+            if(r) {
+                System.out.println("空投成功");
+                return "空投成功";
+            }else{
+                System.out.println("所有地址都已经空投过了");
+                return "所有地址都已经空投过了";
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return "空投过程异常";
         }
 
     }
