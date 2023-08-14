@@ -34,4 +34,33 @@ public class AirdropDto {
             return false;
         }
     }
+
+    public boolean isExist(String address,String result){
+        try {
+            String sql = "select count(*) from airdrop where address=? and result=?";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, address,result);
+            if (count == 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean isAirdropped(String address,Long start){
+        // 判断是否已经空投过，同一天如果空投过，就不再空投
+        try {
+            String sql = "select count(*) from airdrop where address=? and start>=? and end <= ?";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, address,start,start);
+            if (count == 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -211,8 +211,17 @@ public class BussService {
             for (int i = 0; i < from_addr_list.size(); i++) {
                 String addr = from_addr_list.get(i);
                 BigDecimal gas = gas_list.get(i);
-                String res = airdropToAddr(web3j, credentials, addr, gas);
-                if (res.equals("false")) {
+                String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
+                // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
+                if(airdropDto.isExist(addr,batch)){
+                    System.out.println("addr:"+addr+" batch:"+batch+" 已经空投过了");
+                    continue;
+                }else {
+                    System.out.println("addr:"+addr+" batch:"+batch+" 还没有空投过");
+                }
+
+                String hash = airdropToAddr(web3j, credentials, addr, gas);
+                if (hash.equals("false")) {
                     System.out.println("airdropToAddr" + addr + " error");
                 }
                 // 保存到数据库当中
@@ -222,8 +231,7 @@ public class BussService {
                 String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
                 // 使用start、end计算批次，用于查询，hash以后取前8位
-                String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
-                boolean aTrue = airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, res, start, end,batch);
+                boolean aTrue = airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
 //                return aTrue;
             }
         } catch (Exception e) {
