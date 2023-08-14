@@ -64,7 +64,7 @@ public class BussService {
 
     @GetMapping("/getGasListByDay")
     @ResponseBody
-    @ApiOperation(value = "getGasLastDay", notes = "GET指定时间段的GAS列表")
+    @ApiOperation(value = "getGasLastDayRestful", notes = "GET指定时间段的GAS列表")
     public List getGasLastDayRestful(@ApiParam(name = "start", value = "start", required = true) String start,
                                      @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
         Long[] longs = getTimeStampByDayRestful(start, end);
@@ -73,8 +73,8 @@ public class BussService {
 
     @GetMapping("/giveGasListByDay")
     @ResponseBody
-    @ApiOperation(value = "giveGasLastDay", notes = "按照时间段空投GAS")
-    public List giveGasLastDay(@ApiParam(name = "start", value = "start", required = true) String start,
+    @ApiOperation(value = "giveGasListByDay", notes = "按照时间段空投GAS")
+    public List giveGasListByDay(@ApiParam(name = "start", value = "start", required = true) String start,
                                   @ApiParam(name = "end", value = "end", required = true) String end) {
         List r = new ArrayList();
         r.add("空投失败");
@@ -108,7 +108,7 @@ public class BussService {
     @GetMapping("/giveGasLastDay")
     @ResponseBody
     @ApiOperation(value = "giveGasLastDay", notes = "按照当前日期的前一天的时间段来空投")
-    public List giveGasLastDay() {
+    public boolean giveGasLastDay() {
         List r = new ArrayList();
         r.add("空投失败");
         try {
@@ -118,14 +118,10 @@ public class BussService {
             Long end = new Date().getTime() / 1000;
             List list = getSepcGasLastDay(start, end);
             boolean res = airdropGasForList(list,start,end);
-            if (res) {
-                return list;
-            } else {
-                return r;
-            }
+            return res;
         } catch (Exception e) {
             e.printStackTrace();
-            return r;
+            return false;
         }
     }
 
@@ -231,13 +227,14 @@ public class BussService {
                 String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
                 // 使用start、end计算批次，用于查询，hash以后取前8位
-                boolean aTrue = airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
-//                return aTrue;
+                airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
             }
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
-        return true;
+
     }
 
     // 单个地址转账，批量请使用空投合约
