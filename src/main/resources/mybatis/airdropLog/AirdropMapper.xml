@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.airdrop.mapper.AirdropMapper">
+    
+    <resultMap type="Airdrop" id="AirdropResult">
+        <result property="id"    column="id"    />
+        <result property="address"    column="address"    />
+        <result property="gas"    column="gas"    />
+        <result property="nowday"    column="nowday"    />
+        <result property="txhash"    column="txhash"    />
+        <result property="result"    column="result"    />
+        <result property="start"    column="start"    />
+        <result property="end"    column="end"    />
+    </resultMap>
+
+    <sql id="selectAirdropVo">
+        select id, address, gas, nowday, txhash, result, start, end from airdrop
+    </sql>
+
+    <select id="selectAirdropList" parameterType="Airdrop" resultMap="AirdropResult">
+        <include refid="selectAirdropVo"/>
+        <where>  
+            <if test="address != null  and address != ''"> and address = #{address}</if>
+            <if test="gas != null  and gas != ''"> and gas = #{gas}</if>
+            <if test="nowday != null  and nowday != ''"> and nowday = #{nowday}</if>
+            <if test="txhash != null  and txhash != ''"> and txhash = #{txhash}</if>
+            <if test="result != null  and result != ''"> and result = #{result}</if>
+            <if test="start != null  and start != ''"> and start = #{start}</if>
+            <if test="end != null  and end != ''"> and end = #{end}</if>
+        </where>
+
+        order by id desc
+    </select>
+    
+    <select id="selectAirdropById" parameterType="Long" resultMap="AirdropResult">
+        <include refid="selectAirdropVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertAirdrop" parameterType="Airdrop" useGeneratedKeys="true" keyProperty="id">
+        insert into airdrop
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="address != null">address,</if>
+            <if test="gas != null">gas,</if>
+            <if test="nowday != null">nowday,</if>
+            <if test="txhash != null">txhash,</if>
+            <if test="result != null">result,</if>
+            <if test="start != null">start,</if>
+            <if test="end != null">end,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="address != null">#{address},</if>
+            <if test="gas != null">#{gas},</if>
+            <if test="nowday != null">#{nowday},</if>
+            <if test="txhash != null">#{txhash},</if>
+            <if test="result != null">#{result},</if>
+            <if test="start != null">#{start},</if>
+            <if test="end != null">#{end},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAirdrop" parameterType="Airdrop">
+        update airdrop
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="address != null">address = #{address},</if>
+            <if test="gas != null">gas = #{gas},</if>
+            <if test="nowday != null">nowday = #{nowday},</if>
+            <if test="txhash != null">txhash = #{txhash},</if>
+            <if test="result != null">result = #{result},</if>
+            <if test="start != null">start = #{start},</if>
+            <if test="end != null">end = #{end},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAirdropById" parameterType="Long">
+        delete from airdrop where id = #{id}
+    </delete>
+
+    <delete id="deleteAirdropByIds" parameterType="String">
+        delete from airdrop where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

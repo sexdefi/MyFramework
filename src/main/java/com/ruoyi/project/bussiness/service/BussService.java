@@ -6,6 +6,8 @@ import com.ruoyi.framework.aspectj.lang.annotation.Log;
 import com.ruoyi.framework.aspectj.lang.enums.BusinessType;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import com.ruoyi.project.bussiness.common.BusConfigService;
+import com.ruoyi.project.bussiness.mapper.AirdropDto;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.time.DateUtils;
@@ -16,20 +18,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Hash;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.Transfer;
 import org.web3j.utils.Convert;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/tttt")
+@RequestMapping("/gasfee")
+@ApiOperation(value = "GasFee", notes = "空投GAS")
+@Api(value = "GasFee", tags = {"GasFee"})
 @DataSource(value = DataSourceType.SLAVE)
 //只需要在需要切换数据源的方法上使用该注解即可
 public class BussService {
@@ -40,22 +48,106 @@ public class BussService {
     @Autowired
     BusConfigService config;
 
-    public String sql1 = "select c.from_addr as from_addr,sum(c.gas * c.gas_price) as gas from (select from_addr,gas,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
+    @Autowired
+    AirdropDto airdropDto;
 
-    // 按照当前日期的前一天的时间段来查询
-    public List getGasLastDay() {
+    @GetMapping("/getTimeStampByDay")
+    @ResponseBody
+    @ApiOperation(value = "getTimeStampByDay", notes = "计算时间戳")
+    public Long[] getTimeStampByDayRestful(@ApiParam(name = "start", value = "start", required = true) String start,
+                                         @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
+        // start = "2019-01-01 00:00:00";
+        Long startTimestamp = DateUtils.parseDate(start, "yyyy-MM-dd HH:mm:ss").getTime() / 1000;
+        Long endTimestamp = DateUtils.parseDate(end, "yyyy-MM-dd HH:mm:ss").getTime() / 1000;
+        return new Long[]{startTimestamp, endTimestamp};
+    }
 
+    @GetMapping("/getGasListByDay")
+    @ResponseBody
+    @ApiOperation(value = "getGasLastDay", notes = "GET指定时间段的GAS列表")
+    public List getGasLastDayRestful(@ApiParam(name = "start", value = "start", required = true) String start,
+                                     @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
+        Long[] longs = getTimeStampByDayRestful(start, end);
+        return getSepcGasLastDay(longs[0],longs[1]);
+    }
+
+    @GetMapping("/giveGasListByDay")
+    @ResponseBody
+    @ApiOperation(value = "giveGasLastDay", notes = "按照时间段空投GAS")
+    public List giveGasLastDay(@ApiParam(name = "start", value = "start", required = true) String start,
+                                  @ApiParam(name = "end", value = "end", required = true) String end) {
+        List r = new ArrayList();
+        r.add("空投失败");
+        try {
+            Long[] longs = getTimeStampByDayRestful(start, end);
+            List sepcGasLastDay = getSepcGasLastDay(longs[0], longs[1]);
+            boolean res = airdropGasForList(sepcGasLastDay,longs[0],longs[1]);
+            if (res) {
+                return sepcGasLastDay;
+            } else {
+                return r;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return r;
+        }
+    }
+
+    @GetMapping("/getGasLastDay")
+    @ResponseBody
+    @ApiOperation(value = "getGasLastDay", notes = "按照当前日期的前一天的时间段来查询")
+    public List getGasLastDayRestful() {
         Date date = DateUtils.addDays(new Date(), -1);
         System.out.println(date.getTime());
         Long start = date.getTime() / 1000;
         Long end = new Date().getTime() / 1000;
-
-        return getSepcGasLastDay(start,end);
+        List list = getSepcGasLastDay(start, end);
+        return list;
     }
+
+    @GetMapping("/giveGasLastDay")
+    @ResponseBody
+    @ApiOperation(value = "giveGasLastDay", notes = "按照当前日期的前一天的时间段来空投")
+    public List giveGasLastDay() {
+        List r = new ArrayList();
+        r.add("空投失败");
+        try {
+            Date date = DateUtils.addDays(new Date(), -1);
+            System.out.println(date.getTime());
+            Long start = date.getTime() / 1000;
+            Long end = new Date().getTime() / 1000;
+            List list = getSepcGasLastDay(start, end);
+            boolean res = airdropGasForList(list,start,end);
+            if (res) {
+                return list;
+            } else {
+                return r;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return r;
+        }
+    }
+
+
+    public String sql1 = "select c.from_addr as from_addr,sum(c.gas * c.gas_price) as gas from (select from_addr,gas,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
 
     // 指定时间段查询
     public List getSepcGasLastDay(Long start,Long end) {
         Integer amount = config.getConfig("OVER_AMOUNT",500);
+        if (amount == null) {
+            amount = 500;
+        }
+        if(start >= end){
+            return new ArrayList<>();
+        }
+        if (start == null) {
+            start = DateUtils.addDays(new Date(), -1).getTime() / 1000;
+        }
+        if (end == null) {
+            end = new Date().getTime() / 1000;
+        }
+
         String sql2 = String.format(sql1,amount,start,end);
         System.out.println(sql2);
         List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql2);
@@ -66,39 +158,27 @@ public class BussService {
     }
 
 
-    @GetMapping("/getGasListByDay")
-    @ResponseBody
-    @ApiOperation(value = "getGasLastDay", notes = "getGasLastDay")
-    public List getGasLastDayRestful(@ApiParam(name = "start", value = "start", required = true) Long start,
-                                     @ApiParam(name = "end", value = "end", required = true) Long end) {
-        return getSepcGasLastDay(start,end);
-    }
-
-    @GetMapping("/getGasLastDay")
-    @ResponseBody
-    @ApiOperation(value = "getGasLastDay", notes = "getGasLastDay")
-    public List getGasLastDayRestful() {
-        return getGasLastDay();
-    }
-
-    @GetMapping("/giveGasLastDay")
-    @ResponseBody
-    @ApiOperation(value = "giveGasLastDay", notes = "getGasLastDay")
-    public boolean giveGasLastDay() {
-        List gasLastDay = getGasLastDay();
-        try {
-            getGasToList(gasLastDay);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
-
-    public boolean getGasToList(List<Map<String, Object>> maps) {
+    public boolean airdropGasForList(List<Map<String, Object>> maps,Long start,Long end) {
 
         String url = config.getConfig("RPC_URL","http://127.0.0.1:8545");
         String privateKey = config.getConfig("PRIVATE_KEY","0x46279b753d1397d9ff7a3df97501c4fa4316312620a32a00c2551b81b8be7326");
-        Web3j web3j = Web3j.build(new HttpService(url));
+        Web3j web3j = null;
+        Credentials credentials = null;
+        try {
+            web3j = Web3j.build(new HttpService(url));
+            EthBlockNumber send = web3j.ethBlockNumber().send();
+            System.out.println("send:" + send.getBlockNumber());
+            credentials = Credentials.create(privateKey);
+            System.out.println("credentials:" + credentials.getAddress());
+        }catch (Exception e){
+            System.out.println("web3j = Web3j.build(new HttpService(url));");
+            return false;
+        }
+
+        if(maps == null || maps.size() == 0){
+            System.out.println("maps == null || maps.size() == 0");
+            return false;
+        }
 
         // 定义两个list，存放所有的from_addr和gas
         List<String> from_addr_list = new ArrayList<>();
@@ -114,9 +194,7 @@ public class BussService {
                 gas_list.add(bigGas);
             }
         });
-        Credentials credentials = Credentials.create(privateKey);
-//        System.out.println("from_addr_list:" + from_addr_list);
-//        System.out.println("gas_list:" + gas_list);
+
         if(from_addr_list.size() != gas_list.size()){
             System.out.println("from_addr_list.size() != gas_list.size()");
             return false;
@@ -125,14 +203,28 @@ public class BussService {
             System.out.println("from_addr_list.size() == 0");
             return false;
         }
+        if(web3j == null || credentials == null){
+            System.out.println("web3j == null || credentials == null");
+            return false;
+        }
         try {
             for (int i = 0; i < from_addr_list.size(); i++) {
                 String addr = from_addr_list.get(i);
                 BigDecimal gas = gas_list.get(i);
-                boolean res = airdropToAddr(web3j, credentials, addr, gas);
-                if (!res) {
+                String res = airdropToAddr(web3j, credentials, addr, gas);
+                if (res.equals("false")) {
                     System.out.println("airdropToAddr" + addr + " error");
                 }
+                // 保存到数据库当中
+                // 将gas从BigDecimal转为String类型，不用科学记数法
+                String gasStr = gas.toPlainString();
+                // adDate为当前时间用yyyy-MM-dd格式化后的字符串
+                String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+                // 使用start、end计算批次，用于查询，hash以后取前8位
+                String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
+                boolean aTrue = airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, res, start, end,batch);
+//                return aTrue;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -141,9 +233,8 @@ public class BussService {
     }
 
     // 单个地址转账，批量请使用空投合约
-    @Log(title = "空投Gas", businessType = BusinessType.OTHER)
-
-    public boolean airdropToAddr(Web3j web3j, Credentials credentials, String addr, BigDecimal gas) {
+    @Log(title = "定时任务", businessType = BusinessType.OTHER)
+    public String airdropToAddr(Web3j web3j, Credentials credentials, String addr, BigDecimal gas) {
         TransactionReceipt transactionReceipt = null;
         try {
             transactionReceipt = Transfer.sendFunds(
@@ -154,12 +245,12 @@ public class BussService {
             if(transactionReceipt != null){
                 System.out.println("Transaction "
                         + transactionReceipt.getTransactionHash());
-                return true;
+                return transactionReceipt.getTransactionHash();
             }else{
-                return false;
+                return "false";
             }
         } catch (Exception e) {
-            return false;
+            return "false";
         }
     }
 
