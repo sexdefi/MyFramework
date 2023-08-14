@@ -203,6 +203,7 @@ public class BussService {
             System.out.println("web3j == null || credentials == null");
             return false;
         }
+        int count = 0;
         try {
             for (int i = 0; i < from_addr_list.size(); i++) {
                 String addr = from_addr_list.get(i);
@@ -211,6 +212,7 @@ public class BussService {
                 // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
                 if(airdropDto.isExist(addr,batch)){
                     System.out.println("addr:"+addr+" batch:"+batch+" 已经空投过了");
+                    count++;
                     continue;
                 }else {
                     System.out.println("addr:"+addr+" batch:"+batch+" 还没有空投过");
@@ -229,7 +231,9 @@ public class BussService {
                 // 使用start、end计算批次，用于查询，hash以后取前8位
                 airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
             }
-            return true;
+            // 如果count等于from_addr_list.size()，说明所有的地址都已经空投过了，返回false
+            return count != from_addr_list.size();
+            // return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
