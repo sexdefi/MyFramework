@@ -132,7 +132,7 @@ public class BussService {
     }
 
 
-    public String sql1 = "select c.from_addr as from_addr,sum(c.gas * c.gas_price) as gas from (select from_addr,gas,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
+    public String sql1 = "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
 
     // 指定时间段查询
     public List getSepcGasLastDay(Long start,Long end) {
@@ -149,8 +149,8 @@ public class BussService {
         if (end == null) {
             end = new Date().getTime() / 1000;
         }
-
-        String sql2 = String.format(sql1,amount,start,end);
+        String sqlconfig = config.getConfig("SQL", sql1);
+        String sql2 = String.format(sqlconfig,amount,start,end);
         System.out.println(sql2);
         List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql2);
         if (maps == null) {
@@ -161,8 +161,11 @@ public class BussService {
 
 
     public String airdropGasForList(List<Map<String, Object>> maps,Long start,Long end) {
+        if (maps == null || maps.size() == 0) {
+            return "空投失败，没有符合条件的地址";
+        }
 
-        String url = config.getConfig("RPC_URL","http://127.0.0.1:8545");
+        String url = config.getConfig("RPC","http://127.0.0.1:28888");
         String privateKey = config.getConfig("PRIVATE_KEY","0x46279b753d1397d9ff7a3df97501c4fa4316312620a32a00c2551b81b8be7326");
         Web3j web3j = null;
         Credentials credentials = null;
@@ -239,6 +242,7 @@ public class BussService {
                 }
 
                 String hash = airdropToAddr(web3j, credentials, addr, gas);
+                System.out.println("hash:" + hash);
                 if (hash.equals("false")) {
                     System.out.println("airdropToAddr" + addr + " error");
                 }
