@@ -18,24 +18,35 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.web3j.crypto.Credentials;
-import org.web3j.crypto.Hash;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.crypto.*;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
+import org.web3j.protocol.core.methods.response.EthGasPrice;
+import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.RawTransactionManager;
+import org.web3j.tx.TransactionManager;
 import org.web3j.tx.Transfer;
+import org.web3j.tx.gas.ContractGasProvider;
+import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Convert;
+import org.web3j.utils.Numeric;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @RequestMapping("/gasfee")
@@ -58,7 +69,7 @@ public class BussService {
     @ResponseBody
     @ApiOperation(value = "getTimeStampByDay", notes = "计算时间戳")
     public Long[] getTimeStampByDayRestful(@ApiParam(name = "start", value = "start", required = true) String start,
-                                         @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
+                                           @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
         // start = "2019-01-01 00:00:00";
         Long startTimestamp = DateUtils.parseDate(start, "yyyy-MM-dd HH:mm:ss").getTime() / 1000;
         Long endTimestamp = DateUtils.parseDate(end, "yyyy-MM-dd HH:mm:ss").getTime() / 1000;
@@ -71,25 +82,31 @@ public class BussService {
     public List getGasLastDayRestful(@ApiParam(name = "start", value = "start", required = true) String start,
                                      @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
         Long[] longs = getTimeStampByDayRestful(start, end);
-        return getSepcGasLastDay(longs[0],longs[1]);
+        return getSepcGasLastDay(longs[0], longs[1]);
     }
 
     @GetMapping("/giveGasListByDay")
     @ResponseBody
     @ApiOperation(value = "giveGasListByDay", notes = "按照时间段空投GAS")
     public List giveGasListByDay(@ApiParam(name = "start", value = "start", required = true) String start,
-                                  @ApiParam(name = "end", value = "end", required = true) String end) {
+                                 @ApiParam(name = "end", value = "end", required = true) String end) {
         List r = new ArrayList();
         r.add("空投失败");
         try {
             Long[] longs = getTimeStampByDayRestful(start, end);
             List sepcGasLastDay = getSepcGasLastDay(longs[0], longs[1]);
-            String res = airdropGasForList(sepcGasLastDay,longs[0],longs[1]);
-            if (res.equals("空投成功")) {
+            String res = airdropGasForList(sepcGasLastDay, longs[0], longs[1]);
+            if (res.startsWith("success")) {
                 return sepcGasLastDay;
             } else {
+                r.add(res);
                 return r;
             }
+//            if (res.equals("空投成功")) {
+//                return sepcGasLastDay;
+//            } else {
+//                return r;
+//            }
         } catch (Exception e) {
             e.printStackTrace();
             return r;
@@ -118,11 +135,16 @@ public class BussService {
             Long start = date.getTime() / 1000;
             Long end = new Date().getTime() / 1000;
             List list = getSepcGasLastDay(start, end);
-            String res = airdropGasForList(list,start,end);
-            if (res.equals("空投成功")) {
+            String res = airdropGasForList(list, start, end);
+//            if (res.equals("空投成功")) {
+//                return true;
+//            } else {
+//                // LogUtils.ERROR_LOG.error("空投失败，失败原因：" + res);
+//                return false;
+//            }
+            if (res.startsWith("success")) {
                 return true;
             } else {
-                LogUtils.ERROR_LOG.error("空投失败，失败原因：" + res);
                 return false;
             }
         } catch (Exception e) {
@@ -135,12 +157,12 @@ public class BussService {
     public String sql1 = "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
 
     // 指定时间段查询
-    public List getSepcGasLastDay(Long start,Long end) {
-        Integer amount = config.getConfig("OVER_AMOUNT",500);
+    public List getSepcGasLastDay(Long start, Long end) {
+        Integer amount = config.getConfig("OVER_AMOUNT", 500);
         if (amount == null) {
             amount = 500;
         }
-        if(start >= end){
+        if (start >= end) {
             return new ArrayList<>();
         }
         if (start == null) {
@@ -150,7 +172,7 @@ public class BussService {
             end = new Date().getTime() / 1000;
         }
         String sqlconfig = config.getConfig("SQL", sql1);
-        String sql2 = String.format(sqlconfig,amount,start,end);
+        String sql2 = String.format(sqlconfig, amount, start, end);
         System.out.println(sql2);
         List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql2);
         if (maps == null) {
@@ -160,27 +182,32 @@ public class BussService {
     }
 
 
-    public String airdropGasForList(List<Map<String, Object>> maps,Long start,Long end) {
+    public String airdropGasForList(List<Map<String, Object>> maps, Long start, Long end) throws IOException {
         if (maps == null || maps.size() == 0) {
             return "空投失败，没有符合条件的地址";
         }
 
-        String url = config.getConfig("RPC","http://127.0.0.1:28888");
-        String privateKey = config.getConfig("PRIVATE_KEY","0x46279b753d1397d9ff7a3df97501c4fa4316312620a32a00c2551b81b8be7326");
+        String url = config.getConfig("RPC", "http://127.0.0.1:28888");
+        String privateKey = config.getConfig("PRIVATE_KEY", "0x223f25eb7a36c8b1ec1d15b8af0135b758fcce77fd4885287bee2e789d49b916");
+        int chainid = config.getConfig("CHAINID", 2100);
+        String contractAddress = config.getConfig("CONTRACT_ADDRESS", "0xAA62e5664308feEFA5CA3Bbb10aD8Aa8E9a2bf7d");
         Web3j web3j = null;
         Credentials credentials = null;
+        Airdrop airdrop = null;
         try {
             web3j = Web3j.build(new HttpService(url));
             EthBlockNumber send = web3j.ethBlockNumber().send();
             System.out.println("send:" + send.getBlockNumber());
             credentials = Credentials.create(privateKey);
             System.out.println("credentials:" + credentials.getAddress());
-        }catch (Exception e){
+            airdrop = _loadAirdrop(web3j, chainid, privateKey, contractAddress);
+            System.out.println("airdrop:" + airdrop.getContractAddress());
+        } catch (Exception e) {
             System.out.println("web3j = Web3j.build(new HttpService(url));");
             return "Web3未空或者私钥不正确";
         }
 
-        if(maps == null || maps.size() == 0){
+        if (maps == null || maps.size() == 0) {
             System.out.println("maps == null || maps.size() == 0");
             return "空投列表为空";
         }
@@ -200,15 +227,15 @@ public class BussService {
             }
         });
 
-        if(from_addr_list.size() != gas_list.size()){
+        if (from_addr_list.size() != gas_list.size()) {
             System.out.println("from_addr_list.size() != gas_list.size()");
             return "空投列表异常，数量不匹配";
         }
-        if(from_addr_list.size() == 0){
+        if (from_addr_list.size() == 0) {
             System.out.println("from_addr_list.size() == 0");
             return "空投列表为空";
         }
-        if(web3j == null || credentials == null){
+        if (web3j == null || credentials == null) {
             System.out.println("web3j == null || credentials == null");
             return "Web3j或者私钥不正确";
         }
@@ -219,57 +246,154 @@ public class BussService {
         }
         try {
             BigInteger balance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getBalance();
-            if(balance.compareTo(totalGas.toBigInteger()) < 0){
+            if (balance.compareTo(totalGas.toBigInteger()) < 0) {
                 System.out.println("账户余额不足，无法空投");
                 return "账户余额不足，无法空投";
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println("查询余额时候，异常！");
             return "查询余额时候，异常！";
         }
 
-        int count = 0;
-        try {
-            for (int i = 0; i < from_addr_list.size(); i++) {
-                String addr = from_addr_list.get(i);
-                BigDecimal gas = gas_list.get(i);
+        // 定义一个计数器，记录空投成功的数量
+        // 将gas_list里面的数据类型从BigDecimal转换成BigInteger
+        BigInteger totalGasBig = BigInteger.ZERO;
+        List<BigInteger> gas_list_big = new ArrayList<>();
+        for (BigDecimal gas : gas_list) {
+            gas_list_big.add(gas.toBigInteger());
+            totalGasBig = totalGasBig.add(gas.toBigInteger());
+        }
+
+        String contractAirdrop = config.getConfig("CONTRACT_AIRDROP_SWITCH", "true");
+        boolean contractAirdropSwitch = Boolean.parseBoolean(contractAirdrop);
+        String hash = "";
+        if (contractAirdropSwitch) {
+            try {
+                // for (int i = 0; i < from_addr_list.size(); i++) { // 先取50条
+                int _nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.PENDING).send().getTransactionCount().intValue();
+                String _gasPrice = "1";
+                int _gasLimit = 6000000;
+                String _to = contractAddress;
+                String _value = totalGasBig.toString();
+                String _data = airdrop.multiTransfer_OST(from_addr_list, gas_list_big).encodeFunctionCall().substring(2);
+                RawTransaction rawTransaction = newRawTx(_nonce, _gasPrice, _gasLimit, _to, _value, _data);
+                byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainid, credentials);
+                String hexValue = Numeric.toHexString(signedMessage);
+                EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+                if (ethSendTransaction.hasError()) {
+                    System.out.println("空投失败");
+                    return "空投失败";
+                }
+                hash = ethSendTransaction.getTransactionHash();
+                System.out.println("hash:" + hash);
+
                 String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
                 // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
-                if(airdropDto.isExist(addr,batch)){
-                    System.out.println("addr:"+addr+" batch:"+batch+" 已经空投过了");
-                    count++;
-                    continue;
+                if (airdropDto.isExist(from_addr_list.get(0), batch)) {
+                    System.out.println("addr:" + from_addr_list.get(0) + " batch:" + batch + " 已经空投过了");
                 }
 
-                String hash = airdropToAddr(web3j, credentials, addr, gas);
-                System.out.println("hash:" + hash);
-                if (hash.equals("false")) {
-                    System.out.println("airdropToAddr" + addr + " error");
-                }
                 // 保存到数据库当中
                 // 将gas从BigDecimal转为String类型，不用科学记数法
-                String gasStr = gas.toPlainString();
+                String gasStr = totalGasBig.toString();
                 // adDate为当前时间用yyyy-MM-dd格式化后的字符串
                 String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
                 // 使用start、end计算批次，用于查询，hash以后取前8位
-                airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
+                airdropDto.SaveAirdropResultToDb(from_addr_list.get(0), gasStr, adDate, hash, start, end, batch);
+                return "success," + hash;
+            } catch (Exception ex) {
+                System.out.println("ex:" + ex);
+                return "空投失败";
             }
-            // 如果count等于from_addr_list.size()，说明所有的地址都已经空投过了，返回false
-            boolean r = count != from_addr_list.size();
-            if(r) {
-                System.out.println("空投成功");
-                return "空投成功";
-            }else{
-                System.out.println("所有地址都已经空投过了");
-                return "所有地址都已经空投过了";
+        } else {
+            int count = 0;
+            try {
+                for (int i = 0; i < from_addr_list.size(); i++) {
+                    String addr = from_addr_list.get(i);
+                    BigDecimal gas = gas_list.get(i);
+                    String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
+                    // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
+                    if (airdropDto.isExist(addr, batch)) {
+                        System.out.println("addr:" + addr + " batch:" + batch + " 已经空投过了");
+                        count++;
+                        continue;
+                    }
+
+                    hash = airdropToAddr(web3j, credentials, addr, gas);
+
+                    if (hash == null || hash.equals("false")) {
+                        System.out.println("airdropToAddr" + addr + " error");
+                    }
+                    System.out.println("hash:" + hash);
+
+                    // 保存到数据库当中
+                    // 将gas从BigDecimal转为String类型，不用科学记数法
+                    String gasStr = gas.toPlainString();
+                    // adDate为当前时间用yyyy-MM-dd格式化后的字符串
+                    String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+                    // 使用start、end计算批次，用于查询，hash以后取前8位
+                    airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end, batch);
+                }
+                // 如果count等于from_addr_list.size()，说明所有的地址都已经空投过了，返回false
+                boolean r = count != from_addr_list.size();
+                if (r) {
+                    System.out.println("空投成功");
+                    return "空投成功";
+                } else {
+                    System.out.println("所有地址都已经空投过了");
+                    return "所有地址都已经空投过了";
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "空投过程异常";
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "空投过程异常";
         }
 
     }
+//        try {
+//            for (int i = 0; i < from_addr_list.size(); i++) {
+//                String addr = from_addr_list.get(i);
+//                BigDecimal gas = gas_list.get(i);
+//                String batch = Hash.sha3String(start + "-" + end).substring(2, 8);
+//                // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
+//                if(airdropDto.isExist(addr,batch)){
+//                    System.out.println("addr:"+addr+" batch:"+batch+" 已经空投过了");
+//                    count++;
+//                    continue;
+//                }
+//
+//                String hash = airdropToAddr(web3j, credentials,addr, gas);
+//
+//                if (hash == null || hash.equals("false")) {
+//                    System.out.println("airdropToAddr" + addr + " error");
+//                }
+//                System.out.println("hash:" + hash);
+//
+//                // 保存到数据库当中
+//                // 将gas从BigDecimal转为String类型，不用科学记数法
+//                String gasStr = gas.toPlainString();
+//                // adDate为当前时间用yyyy-MM-dd格式化后的字符串
+//                String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+//
+//                // 使用start、end计算批次，用于查询，hash以后取前8位
+//                airdropDto.SaveAirdropResultToDb(addr, gasStr, adDate, hash, start, end,batch);
+//            }
+//            // 如果count等于from_addr_list.size()，说明所有的地址都已经空投过了，返回false
+//            boolean r = count != from_addr_list.size();
+//            if(r) {
+//                System.out.println("空投成功");
+//                return "空投成功";
+//            }else{
+//                System.out.println("所有地址都已经空投过了");
+//                return "所有地址都已经空投过了";
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "空投过程异常";
+//        }
+//}
 
     // 单个地址转账，批量请使用空投合约
     @Log(title = "定时任务", businessType = BusinessType.OTHER)
@@ -281,11 +405,11 @@ public class BussService {
                             addr,  // you can put any address here
                             gas, Convert.Unit.WEI)  // 1 wei = 10^-18 Ether
                     .send();
-            if(transactionReceipt != null){
+            if (transactionReceipt != null) {
                 System.out.println("Transaction "
                         + transactionReceipt.getTransactionHash());
                 return transactionReceipt.getTransactionHash();
-            }else{
+            } else {
                 return "false";
             }
         } catch (Exception e) {
@@ -293,11 +417,54 @@ public class BussService {
         }
     }
 
-    // 调用airdrop空投合约来进行转账
-    public boolean airdrop(Web3j web3j,Credentials credentials,List addrs,List gas){
 
-        return true;
+    @Log(title = "定时任务", businessType = BusinessType.OTHER)
+    public String airdropToAddrEIP155(Web3j web3j, Credentials credentials, Integer chainid, BigInteger nonce, String addr, BigDecimal gas) {
+        // 满足EIP155，转账一定数量的主币
+        try {
+            EthGasPrice ethGasPrice = web3j.ethGasPrice().send();
+
+            RawTransaction rawTransaction = RawTransaction.createEtherTransaction(
+                    nonce,
+                    ethGasPrice.getGasPrice().multiply(BigInteger.valueOf(2)),
+                    BigInteger.valueOf(210000),
+                    addr,
+                    gas.toBigInteger()
+            );
+            byte[] bytes = TransactionEncoder.signMessage(rawTransaction, chainid, credentials);
+            String hexValue = Numeric.toHexString(bytes);
+            EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+            if (ethSendTransaction != null) {
+                System.out.println("Transaction "
+                        + ethSendTransaction.getTransactionHash());
+                return ethSendTransaction.getTransactionHash();
+            } else {
+                return "false";
+            }
+        } catch (Exception e) {
+            return "false";
+        }
     }
 
+    Airdrop _airdrop = null;
 
+    private Airdrop _loadAirdrop(Web3j web3j, int chainid, String privatekey, String contract_address) {
+        if (_airdrop == null) {
+            Credentials credentials = Credentials.create(privatekey);
+            ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(1000000000), BigInteger.valueOf(2100000));
+            TransactionManager transactionManager = new RawTransactionManager(web3j, credentials, chainid); //EIP-155
+            return Airdrop.load(contract_address, web3j, transactionManager, contractGasProvider);
+        }
+        return _airdrop;
+    }
+
+    public static RawTransaction newRawTx(int _nonce, String _gasPrice, int _gasLimit, String _to, String _value, String _data) {
+        BigInteger nonce = new BigInteger(String.valueOf(_nonce));
+        BigInteger gasLimit = new BigInteger(String.valueOf(_gasLimit));
+        BigInteger gasPrice = Convert.toWei(_gasPrice, Convert.Unit.GWEI).toBigInteger();
+        BigInteger value = Convert.toWei(_value, Convert.Unit.WEI).toBigInteger();
+
+        RawTransaction rawTransaction = RawTransaction.createTransaction(nonce, gasPrice, gasLimit, _to, value, _data);
+        return rawTransaction;
+    }
 }
