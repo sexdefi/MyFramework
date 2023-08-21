@@ -154,10 +154,14 @@ public class BussService {
     }
 
 
-    public String sql1 = "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
+    // public String sql1 = "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
+    public String sql1 =
+            "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account_token a left join transaction_info b on a.address = b.from_addr where a.token_address = '%s' && a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
+
 
     // 指定时间段查询
     public List getSepcGasLastDay(Long start, Long end) {
+        String tokenAddress = config.getConfig("TOKEN_ADDRESS", "0x9599695608BE59a420d7b9A32f3AbFc362d88d36");
         Integer amount = config.getConfig("OVER_AMOUNT", 500);
         if (amount == null) {
             amount = 500;
@@ -172,7 +176,7 @@ public class BussService {
             end = new Date().getTime() / 1000;
         }
         String sqlconfig = config.getConfig("SQL", sql1);
-        String sql2 = String.format(sqlconfig, amount, start, end);
+        String sql2 = String.format(sqlconfig,tokenAddress, amount, start, end);
         System.out.println(sql2);
         List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql2);
         if (maps == null) {
@@ -189,8 +193,8 @@ public class BussService {
 
         String url = config.getConfig("RPC", "http://127.0.0.1:28888");
         String privateKey = config.getConfig("PRIVATE_KEY", "0x223f25eb7a36c8b1ec1d15b8af0135b758fcce77fd4885287bee2e789d49b916");
-        int chainid = config.getConfig("CHAINID", 2100);
-        String contractAddress = config.getConfig("CONTRACT_ADDRESS", "0xAA62e5664308feEFA5CA3Bbb10aD8Aa8E9a2bf7d");
+        int chainid = config.getConfig("CHAINID", 2030);
+        String contractAddress = config.getConfig("AIRDROP_ADDRESS", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
         Web3j web3j = null;
         Credentials credentials = null;
         Airdrop airdrop = null;
