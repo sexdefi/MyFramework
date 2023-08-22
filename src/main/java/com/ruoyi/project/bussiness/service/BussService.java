@@ -191,9 +191,9 @@ public class BussService {
             return "空投失败，没有符合条件的地址";
         }
 
-        String url = config.getConfig("RPC", "http://127.0.0.1:28888");
-        String privateKey = config.getConfig("PRIVATE_KEY", "0x223f25eb7a36c8b1ec1d15b8af0135b758fcce77fd4885287bee2e789d49b916");
-        int chainid = config.getConfig("CHAINID", 2030);
+        String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
+        String privateKey = config.getConfig("PRIVATE_KEY", "0x3a42de4ce6a82ad59012b3629f860a5781ff64bd99a992398f138dece323f01d");
+        int chainid = config.getConfig("CHAINID", 2023);
         String contractAddress = config.getConfig("AIRDROP_ADDRESS", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
         Web3j web3j = null;
         Credentials credentials = null;
