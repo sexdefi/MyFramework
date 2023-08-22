@@ -6,6 +6,7 @@ spring:
         druid:
             # 主库数据源
             master:
+#                url: jdbc:mysql://18.163.113.145:9306/ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 url: jdbc:mysql://localhost:9306/ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 username: root
                 password: shjblockchain
@@ -13,6 +14,7 @@ spring:
             slave:
                 # 从数据源开关/默认关闭
                 enabled: true
+#                url: jdbc:mysql://18.163.113.145:9306/txchain_scan_sh?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 url: jdbc:mysql://localhost:9306/txchain_scan_sh?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 username: root
                 password: shjblockchain
