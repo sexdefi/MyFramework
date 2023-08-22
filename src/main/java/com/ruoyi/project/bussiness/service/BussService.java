@@ -267,6 +267,8 @@ public class BussService {
             gas_list_big.add(gas.toBigInteger());
             totalGasBig = totalGasBig.add(gas.toBigInteger());
         }
+        // 多加一点gas防止四舍五入
+        totalGasBig = totalGasBig.add(new BigInteger("100000000000"));
 
         String contractAirdrop = config.getConfig("CONTRACT_AIRDROP_SWITCH", "true");
         boolean contractAirdropSwitch = Boolean.parseBoolean(contractAirdrop);

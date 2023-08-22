@@ -53,7 +53,7 @@ public class Airdrop extends Contract {
 
     public static final String FUNC_MULTITRANSFERTOKEN_A4A = "multiTransferToken_a4A";
 
-    public static final String FUNC_MULTITRANSFER_OST = "multiTransfer_OST";
+    public static final String FUNC_MULTITRANSFER_OST = "multiETHTransfer4EachAirDrop";
 
     public static final String FUNC_OWNER = "owner";
 
