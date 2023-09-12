@@ -125,6 +125,96 @@ public class BussService {
         return list;
     }
 
+//    @GetMapping("/snapshotGasLastDay")
+//    @ResponseBody
+//    @ApiOperation(value = "snapshotGasLastDay", notes = "按照当前日期的前一天的时间段来快照，保存到数据库中")
+//    public boolean snapshotGasLastDay() {
+//        Date date = DateUtils.addDays(new Date(), -1);
+//        System.out.println(date.getTime());
+//        Long start = date.getTime() / 1000;
+//        Long end = new Date().getTime() / 1000;
+//        List list = getSepcGasLastDay(start, end);
+//        return saveGasList(list);
+//    }
+
+    //将快照和空投批次写入到数据库中。
+    //表格字段有：自增id，批次号，用户地址，token地址，token数量，花费gas数量，空投时间，快照时间，空投状态（0：未空投，1：空投中，2：空投成功，3：空投失败），空投hash
+    //批次号生成规则：当前时间yyyyMMdd+4位顺序号
+    // 建立表的SQL语句：
+    // CREATE TABLE `airdrop_batch_log` (
+    //  `id` int(11) NOT NULL AUTO_INCREMENT,
+    //  `batch_no` varchar(20) DEFAULT NULL COMMENT '批次号',
+    //  `address` varchar(100) DEFAULT NULL COMMENT '地址',
+    //  `token_address` varchar(100) DEFAULT NULL COMMENT '快照token地址',
+    //  `token_amount` varchar(255) DEFAULT NULL COMMENT '快照token数量',
+    //  `amount` varchar(255) DEFAULT NULL COMMENT '空投数量',
+    //  `airdrop_time` varchar(100) DEFAULT NULL COMMENT '空投时间',
+    //  `snapshot_time` varchar(100) DEFAULT NULL COMMENT '快照时间',
+    //  `ad_status` varchar(10) DEFAULT NULL COMMENT '空投状态（0：未空投，1：空投中，2：空投成功，3：空投失败）',
+    //  `airdrop_hash` varchar(100) DEFAULT NULL COMMENT '空投hash',
+    //  PRIMARY KEY (`id`)
+    //) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='空投批次快照表';
+
+    // 当天交易数据表，字段包括：自增id，日期(yyyyMMdd)，交易笔数，总交易手续费，交易费返还，成功交易的手续费，交易失败的手续费，利润，备注
+    // 建表语句：
+    // CREATE TABLE `profit_log` (
+    //  `id` int(11) NOT NULL AUTO_INCREMENT,
+    //  `clear_date` varchar(20) DEFAULT NULL COMMENT '日期',
+    //  `tx_count` varchar(20) DEFAULT NULL COMMENT '交易笔数',
+    //  `total_fee` varchar(20) DEFAULT NULL COMMENT '总交易手续费',
+    //  `fee_return` varchar(20) DEFAULT NULL COMMENT '交易费返还',
+    //  `success_fee` varchar(20) DEFAULT NULL COMMENT '成功交易的手续费',
+    //  `fail_fee` varchar(20) DEFAULT NULL COMMENT '交易失败的手续费',
+    //  `profit` varchar(20) DEFAULT NULL COMMENT '利润',
+    //  `remark` varchar(100) DEFAULT NULL COMMENT '备注',
+    //  PRIMARY KEY (`id`)
+    //) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='当天交易数据表';
+
+//
+//
+//    private boolean saveGasList(List list) {
+//        // 遍历list，每150条生成一个批次号，然后写入数据库
+//        int size = list.size();
+//        int count = size / 150;
+//        int mod = size % 150;
+//        if (mod > 0) {
+//            count++;
+//        }
+//        String batchPrefix = "";
+//        try {
+//            // 获取今天的yyyyMMdd
+//            batchPrefix = com.ruoyi.common.utils.DateUtils.dateTimeNow("yyyyMMdd");
+//        }catch (Exception e){
+//            return false;
+//        }
+//
+//        for (int i = 0; i < count; i++) {
+//            String batchNo =  batchPrefix + String.format("%04d", i + 1);
+//            List subList = list.subList(i * 150, (i + 1) * 150 > size ? size : (i + 1) * 150);
+//            for (int j = 0; j < subList.size(); j++) {
+//                Map map = (Map) subList.get(j);
+//                String address = (String) map.get("from_addr");
+//                Double gas = (Double) map.get("gas");
+//                BigDecimal amount = new BigDecimal(gas);
+//                // 空投时间的0点
+//                Date airdropTime = DateUtils.truncate(new Date(), Calendar.DATE);
+//                // 前一天
+//                Date gasStartTime = DateUtils.addDays(new Date(), -1);
+//                Date gasSnapshotTime = new Date();
+//                try {
+//                    String sql = "insert into airdrop_batch_log(batch_no,address,amount,airdrop_time,gas_start_time,gas_snapshot_time,gstatus,tx_hash) values(?,?,?,?,?,?,?,?)";
+//                    jdbcTemplate.update(sql, batchNo, address, amount, airdropTime, gasStartTime, gasSnapshotTime, 0, "");
+//                } catch (Exception e) {
+//                    System.out.println("保存失败：：：：批次号：" + batchNo + "，地址：" + address + "，空投数量：" + amount + "，空投时间：" + airdropTime.getTime() + "，Gas开始时间：" + gasStartTime.getTime() + "，Gas快照时间：" + gasSnapshotTime.getTime() + "，空投状态：0");
+//                }
+//            }
+//        }
+//        return true;
+//    }
+
+
+
+
     @GetMapping("/giveGasLastDay")
     @ResponseBody
     @ApiOperation(value = "giveGasLastDay", notes = "按照当前日期的前一天的时间段来空投")
