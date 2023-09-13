@@ -145,11 +145,37 @@ public class BussService {
         }
     }
 
+    @GetMapping("/giveGasLastHour")
+    @ResponseBody
+    @ApiOperation(value = "giveGasLastHour", notes = "按照当前日期的前一个小时的时间段来空投")
+    public boolean giveGasLastHour() {
+        try {
+            Date date = DateUtils.addHours(new Date(), -1);
+            System.out.println(date.getTime());
+            Long start = date.getTime() / 1000;
+            Long end = new Date().getTime() / 1000;
+            List list = getSepcGasLastDay(start, end);
+            String res = airdropGasForList(list, start, end);
+
+            if (res.startsWith("success")) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // public String sql1 = "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account a left join transaction_info b on a.address = b.from_addr where a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
 //    public String sql1 =
 //            "select c.from_addr as from_addr,sum(c.gas_used * c.gas_price) as gas from (select from_addr,gas_used,gas_price from account_token a left join transaction_info b on a.address = b.from_addr where a.token_address = '%s' && a.balance >= %d and `TIMESTAMP`> %d and `TIMESTAMP` <= %d) c GROUP BY c.from_addr;";
 //
-    public String sql1 = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr";
+    public String sql1 = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr ORDER BY gas DESC LIMIT 220";
+
+//    public String sql1 = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr";
+
 
     public String sqlfail = "select * from (SELECT * FROM `txchain_scan_sh`.`transaction_info` WHERE `txstatus` = '0x0' AND `input` LIKE '%418d1873a4440c6e0a16d45dcd328a214f697dd5%' AND `input` LIKE '%f89c8c3cf0d39745f9f691fc2839572ddc00e02f%' ORDER BY `timestamp` asc ) a JOIN token_transfer b on a.thash = b.tx_hash;";
 
