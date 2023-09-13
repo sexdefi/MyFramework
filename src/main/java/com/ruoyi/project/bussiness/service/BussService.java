@@ -191,7 +191,7 @@ public class BussService {
         String contractAddress = config.getConfig("AIRDROP_ADDRESS", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
         Web3j web3j = null;
         Credentials credentials = null;
-        Airdrop airdrop = null;
+        AirdropContract airdrop = null;
         try {
             web3j = Web3j.build(new HttpService(url));
             EthBlockNumber send = web3j.ethBlockNumber().send();
@@ -446,14 +446,14 @@ public class BussService {
         }
     }
 
-    Airdrop _airdrop = null;
+    AirdropContract _airdrop = null;
 
-    private Airdrop _loadAirdrop(Web3j web3j, int chainid, String privatekey, String contract_address) {
+    private AirdropContract _loadAirdrop(Web3j web3j, int chainid, String privatekey, String contract_address) {
         if (_airdrop == null) {
             Credentials credentials = Credentials.create(privatekey);
             ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(1000000000), BigInteger.valueOf(2100000));
             TransactionManager transactionManager = new RawTransactionManager(web3j, credentials, chainid); //EIP-155
-            return Airdrop.load(contract_address, web3j, transactionManager, contractGasProvider);
+            return AirdropContract.load(contract_address, web3j, transactionManager, contractGasProvider);
         }
         return _airdrop;
     }

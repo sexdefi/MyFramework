@@ -36,7 +36,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * <p>Generated with web3j version 1.4.1.
  */
 @SuppressWarnings("rawtypes")
-public class Airdrop extends Contract {
+public class AirdropContract extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
     public static final String FUNC_EMERGENCYSTOP = "emergencyStop";
@@ -82,20 +82,20 @@ public class Airdrop extends Contract {
     ;
 
     @Deprecated
-    protected Airdrop(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+    protected AirdropContract(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
-    protected Airdrop(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+    protected AirdropContract(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, credentials, contractGasProvider);
     }
 
     @Deprecated
-    protected Airdrop(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+    protected AirdropContract(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    protected Airdrop(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+    protected AirdropContract(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
@@ -368,21 +368,21 @@ public class Airdrop extends Contract {
     }
 
     @Deprecated
-    public static Airdrop load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
-        return new Airdrop(contractAddress, web3j, credentials, gasPrice, gasLimit);
+    public static AirdropContract load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+        return new AirdropContract(contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
     @Deprecated
-    public static Airdrop load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
-        return new Airdrop(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    public static AirdropContract load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+        return new AirdropContract(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public static Airdrop load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
-        return new Airdrop(contractAddress, web3j, credentials, contractGasProvider);
+    public static AirdropContract load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+        return new AirdropContract(contractAddress, web3j, credentials, contractGasProvider);
     }
 
-    public static Airdrop load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
-        return new Airdrop(contractAddress, web3j, transactionManager, contractGasProvider);
+    public static AirdropContract load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+        return new AirdropContract(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
     public static class EscapeHatchCalledEventResponse extends BaseEventResponse {
