@@ -86,8 +86,7 @@ public class BussService {
     @ResponseBody
     @ApiOperation(value = "giveGasListByDay", notes = "按照时间段空投GAS")
     public List giveGasListByDay(@ApiParam(name = "start", value = "start", required = true) String start,
-                                 @ApiParam(name = "end", value = "end", required = true) String end,
-                                 @ApiParam(name= "address", value = "address", required = false) String addr) throws ParseException {
+                                 @ApiParam(name = "end", value = "end", required = true) String end) throws ParseException {
         List r = new ArrayList();
         r.add("空投失败");
         try {
