@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.Profit.mapper.ProfitLogMapper">
+    
+    <resultMap type="ProfitLog" id="ProfitLogResult">
+        <result property="id"    column="id"    />
+        <result property="clearDate"    column="clear_date"    />
+        <result property="txCount"    column="tx_count"    />
+        <result property="totalFee"    column="total_fee"    />
+        <result property="feeReturn"    column="fee_return"    />
+        <result property="successFee"    column="success_fee"    />
+        <result property="failFee"    column="fail_fee"    />
+        <result property="profit"    column="profit"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectProfitLogVo">
+        select id, clear_date, tx_count, total_fee, fee_return, success_fee, fail_fee, profit, remark from profit_log
+    </sql>
+
+    <select id="selectProfitLogList" parameterType="ProfitLog" resultMap="ProfitLogResult">
+        <include refid="selectProfitLogVo"/>
+        <where>  
+            <if test="clearDate != null  and clearDate != ''"> and clear_date = #{clearDate}</if>
+            <if test="txCount != null  and txCount != ''"> and tx_count = #{txCount}</if>
+            <if test="totalFee != null  and totalFee != ''"> and total_fee = #{totalFee}</if>
+            <if test="feeReturn != null  and feeReturn != ''"> and fee_return = #{feeReturn}</if>
+            <if test="successFee != null  and successFee != ''"> and success_fee = #{successFee}</if>
+            <if test="failFee != null  and failFee != ''"> and fail_fee = #{failFee}</if>
+            <if test="profit != null  and profit != ''"> and profit = #{profit}</if>
+        </where>
+    </select>
+    
+    <select id="selectProfitLogById" parameterType="Long" resultMap="ProfitLogResult">
+        <include refid="selectProfitLogVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertProfitLog" parameterType="ProfitLog" useGeneratedKeys="true" keyProperty="id">
+        insert into profit_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="clearDate != null">clear_date,</if>
+            <if test="txCount != null">tx_count,</if>
+            <if test="totalFee != null">total_fee,</if>
+            <if test="feeReturn != null">fee_return,</if>
+            <if test="successFee != null">success_fee,</if>
+            <if test="failFee != null">fail_fee,</if>
+            <if test="profit != null">profit,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="clearDate != null">#{clearDate},</if>
+            <if test="txCount != null">#{txCount},</if>
+            <if test="totalFee != null">#{totalFee},</if>
+            <if test="feeReturn != null">#{feeReturn},</if>
+            <if test="successFee != null">#{successFee},</if>
+            <if test="failFee != null">#{failFee},</if>
+            <if test="profit != null">#{profit},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProfitLog" parameterType="ProfitLog">
+        update profit_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="clearDate != null">clear_date = #{clearDate},</if>
+            <if test="txCount != null">tx_count = #{txCount},</if>
+            <if test="totalFee != null">total_fee = #{totalFee},</if>
+            <if test="feeReturn != null">fee_return = #{feeReturn},</if>
+            <if test="successFee != null">success_fee = #{successFee},</if>
+            <if test="failFee != null">fail_fee = #{failFee},</if>
+            <if test="profit != null">profit = #{profit},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteProfitLogById" parameterType="Long">
+        delete from profit_log where id = #{id}
+    </delete>
+
+    <delete id="deleteProfitLogByIds" parameterType="String">
+        delete from profit_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

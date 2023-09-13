@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.batch.mapper.AirdropBatchLogMapper">
+    
+    <resultMap type="AirdropBatchLog" id="AirdropBatchLogResult">
+        <result property="id"    column="id"    />
+        <result property="batchNo"    column="batch_no"    />
+        <result property="address"    column="address"    />
+        <result property="tokenAddress"    column="token_address"    />
+        <result property="tokenAmount"    column="token_amount"    />
+        <result property="amount"    column="amount"    />
+        <result property="airdropTime"    column="airdrop_time"    />
+        <result property="snapshotTime"    column="snapshot_time"    />
+        <result property="adStatus"    column="ad_status"    />
+        <result property="airdropHash"    column="airdrop_hash"    />
+        <result property="batchIndex"    column="batch_index"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectAirdropBatchLogVo">
+        select id, batch_no, address, token_address, token_amount, amount, airdrop_time, snapshot_time, ad_status, airdrop_hash, batch_index, remark from airdrop_batch_log
+    </sql>
+
+    <select id="selectAirdropBatchLogList" parameterType="AirdropBatchLog" resultMap="AirdropBatchLogResult">
+        <include refid="selectAirdropBatchLogVo"/>
+        <where>  
+            <if test="batchNo != null  and batchNo != ''"> and batch_no = #{batchNo}</if>
+            <if test="address != null  and address != ''"> and address = #{address}</if>
+            <if test="tokenAddress != null  and tokenAddress != ''"> and token_address = #{tokenAddress}</if>
+            <if test="tokenAmount != null  and tokenAmount != ''"> and token_amount = #{tokenAmount}</if>
+            <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
+            <if test="airdropTime != null  and airdropTime != ''"> and airdrop_time = #{airdropTime}</if>
+            <if test="snapshotTime != null  and snapshotTime != ''"> and snapshot_time = #{snapshotTime}</if>
+            <if test="adStatus != null  and adStatus != ''"> and ad_status = #{adStatus}</if>
+            <if test="airdropHash != null  and airdropHash != ''"> and airdrop_hash = #{airdropHash}</if>
+            <if test="batchIndex != null  and batchIndex != ''"> and batch_index = #{batchIndex}</if>
+        </where>
+    </select>
+    
+    <select id="selectAirdropBatchLogById" parameterType="Long" resultMap="AirdropBatchLogResult">
+        <include refid="selectAirdropBatchLogVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertAirdropBatchLog" parameterType="AirdropBatchLog" useGeneratedKeys="true" keyProperty="id">
+        insert into airdrop_batch_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="batchNo != null">batch_no,</if>
+            <if test="address != null">address,</if>
+            <if test="tokenAddress != null">token_address,</if>
+            <if test="tokenAmount != null">token_amount,</if>
+            <if test="amount != null">amount,</if>
+            <if test="airdropTime != null">airdrop_time,</if>
+            <if test="snapshotTime != null">snapshot_time,</if>
+            <if test="adStatus != null">ad_status,</if>
+            <if test="airdropHash != null">airdrop_hash,</if>
+            <if test="batchIndex != null">batch_index,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="batchNo != null">#{batchNo},</if>
+            <if test="address != null">#{address},</if>
+            <if test="tokenAddress != null">#{tokenAddress},</if>
+            <if test="tokenAmount != null">#{tokenAmount},</if>
+            <if test="amount != null">#{amount},</if>
+            <if test="airdropTime != null">#{airdropTime},</if>
+            <if test="snapshotTime != null">#{snapshotTime},</if>
+            <if test="adStatus != null">#{adStatus},</if>
+            <if test="airdropHash != null">#{airdropHash},</if>
+            <if test="batchIndex != null">#{batchIndex},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAirdropBatchLog" parameterType="AirdropBatchLog">
+        update airdrop_batch_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="batchNo != null">batch_no = #{batchNo},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="tokenAddress != null">token_address = #{tokenAddress},</if>
+            <if test="tokenAmount != null">token_amount = #{tokenAmount},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="airdropTime != null">airdrop_time = #{airdropTime},</if>
+            <if test="snapshotTime != null">snapshot_time = #{snapshotTime},</if>
+            <if test="adStatus != null">ad_status = #{adStatus},</if>
+            <if test="airdropHash != null">airdrop_hash = #{airdropHash},</if>
+            <if test="batchIndex != null">batch_index = #{batchIndex},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAirdropBatchLogById" parameterType="Long">
+        delete from airdrop_batch_log where id = #{id}
+    </delete>
+
+    <delete id="deleteAirdropBatchLogByIds" parameterType="String">
+        delete from airdrop_batch_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
