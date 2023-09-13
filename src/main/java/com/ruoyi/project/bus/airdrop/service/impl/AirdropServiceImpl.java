@@ -1,6 +1,9 @@
 package com.ruoyi.project.bus.airdrop.service.impl;
 
 import java.util.List;
+
+import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
+import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.bus.airdrop.mapper.AirdropMapper;
@@ -15,6 +18,7 @@ import com.ruoyi.common.utils.text.Convert;
  * @date 2023-08-14
  */
 @Service
+@DataSource(value = DataSourceType.MASTER)
 public class AirdropServiceImpl implements IAirdropService 
 {
     @Autowired

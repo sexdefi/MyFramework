@@ -1,6 +1,9 @@
 package com.ruoyi.project.bus.Profit.service.impl;
 
 import java.util.List;
+
+import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
+import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.bus.Profit.mapper.ProfitLogMapper;
@@ -15,6 +18,7 @@ import com.ruoyi.common.utils.text.Convert;
  * @date 2023-09-13
  */
 @Service
+@DataSource(value = DataSourceType.MASTER)
 public class ProfitLogServiceImpl implements IProfitLogService 
 {
     @Autowired
