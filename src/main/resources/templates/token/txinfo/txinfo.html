@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('交易记录列表')"/>
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li class="select-time">
+                            <label>时间范围：</label>
+                            <input type="text" class="time-input" id="startTime" placeholder="开始时间"
+                                   name="params[beginTimestamp]"/>
+                            <span>-</span>
+                            <input type="text" class="time-input" id="endTime" placeholder="结束时间"
+                                   name="params[endTimestamp]"/>
+                        </li>
+                        <li>
+                            <label>交易状态：</label>
+                            <input type="text" name="txstatus"/>
+                        </li>
+                        <li>
+                            <label>交易哈希：</label>
+                            <input type="text" name="thash"/>
+                        </li>
+                        <li>
+                            <label>From：</label>
+                            <input type="text" name="fromAddr"/>
+                        </li>
+                        <li>
+                            <label>To：</label>
+                            <input type="text" name="toAddr"/>
+                        </li>
+
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="token:txinfo:export">
+                <i class="fa fa-download"></i> 导出
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('token:txinfo:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('token:txinfo:remove')}]];
+    var prefix = ctx + "token/txinfo";
+
+    $(function () {
+        var options = {
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            modalName: "交易记录",
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'blockNumber',
+                    title: '区块号'
+                },
+                {
+                    field: 'thash',
+                    title: '交易哈希'
+                },
+                {
+                    field: 'fromAddr',
+                    title: 'From'
+                },
+                // {
+                //     field: 'gasPrice',
+                //     title: 'gas价格'
+                // },
+                // {
+                //     field: 'gasUsed',
+                //     title: 'gas消耗'
+                // },
+                {
+                    title: 'gas消耗总额',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return row.gasPrice * row.gasUsed;
+                    }
+                },
+                // {
+                //     field: 'timestamp',
+                //     title: '时间戳'
+                // },
+                {
+                    field: 'toAddr',
+                    title: 'To'
+                },
+                // {
+                //     field: 'txstatus',
+                //     title: '交易状态'
+                // },
+                //如果交易状态等于0x1则展示成功，否则展示失败
+                {
+                    title: '交易状态',
+                    align: 'center',
+                    field: 'txstatus',
+                    formatter: function (value, row, index) {
+                        if (row.txstatus == "0x1") {
+                            return '<span class="label label-success">成功</span>';
+                        } else {
+                            return '<span class="label label-danger">失败</span>';
+                        }
+                    }
+                }
+            ]
+        };
+        $.table.init(options);
+    });
+</script>
+</body>
+</html>

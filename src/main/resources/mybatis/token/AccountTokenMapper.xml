@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.token.mapper.AccountTokenMapper">
+    
+    <resultMap type="AccountToken" id="AccountTokenResult">
+        <result property="id"    column="id"    />
+        <result property="address"    column="address"    />
+        <result property="balance"    column="balance"    />
+        <result property="fCreateAt"    column="f_create_at"    />
+        <result property="erc1155id"    column="erc1155id"    />
+        <result property="tokenAddress"    column="token_address"    />
+        <result property="tokenName"    column="token_name"    />
+        <result property="tokenType"    column="token_type"    />
+    </resultMap>
+
+    <sql id="selectAccountTokenVo">
+        select id, address, balance, f_create_at, erc1155id, token_address, token_name, token_type from account_token
+    </sql>
+
+    <select id="selectAccountTokenList" parameterType="AccountToken" resultMap="AccountTokenResult">
+        <include refid="selectAccountTokenVo"/>
+        <where>  
+            <if test="address != null  and address != ''"> and address = #{address}</if>
+            <if test="balance != null  and balance != ''"> and balance = #{balance}</if>
+            <if test="tokenAddress != null  and tokenAddress != ''"> and token_address = #{tokenAddress}</if>
+            <if test="tokenName != null  and tokenName != ''"> and token_name like concat('%', #{tokenName}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectAccountTokenById" parameterType="Long" resultMap="AccountTokenResult">
+        <include refid="selectAccountTokenVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertAccountToken" parameterType="AccountToken" useGeneratedKeys="true" keyProperty="id">
+        insert into account_token
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="address != null and address != ''">address,</if>
+            <if test="balance != null">balance,</if>
+            <if test="fCreateAt != null">f_create_at,</if>
+            <if test="erc1155id != null">erc1155id,</if>
+            <if test="tokenAddress != null and tokenAddress != ''">token_address,</if>
+            <if test="tokenName != null and tokenName != ''">token_name,</if>
+            <if test="tokenType != null">token_type,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="address != null and address != ''">#{address},</if>
+            <if test="balance != null">#{balance},</if>
+            <if test="fCreateAt != null">#{fCreateAt},</if>
+            <if test="erc1155id != null">#{erc1155id},</if>
+            <if test="tokenAddress != null and tokenAddress != ''">#{tokenAddress},</if>
+            <if test="tokenName != null and tokenName != ''">#{tokenName},</if>
+            <if test="tokenType != null">#{tokenType},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAccountToken" parameterType="AccountToken">
+        update account_token
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="address != null and address != ''">address = #{address},</if>
+            <if test="balance != null">balance = #{balance},</if>
+            <if test="fCreateAt != null">f_create_at = #{fCreateAt},</if>
+            <if test="erc1155id != null">erc1155id = #{erc1155id},</if>
+            <if test="tokenAddress != null and tokenAddress != ''">token_address = #{tokenAddress},</if>
+            <if test="tokenName != null and tokenName != ''">token_name = #{tokenName},</if>
+            <if test="tokenType != null">token_type = #{tokenType},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAccountTokenById" parameterType="Long">
+        delete from account_token where id = #{id}
+    </delete>
+
+    <delete id="deleteAccountTokenByIds" parameterType="String">
+        delete from account_token where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

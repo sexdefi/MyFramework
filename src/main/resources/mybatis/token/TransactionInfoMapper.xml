@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.txinfo.mapper.TransactionInfoMapper">
+    
+    <resultMap type="TransactionInfo" id="TransactionInfoResult">
+        <result property="thash"    column="thash"    />
+        <result property="actualData"    column="actual_data"    />
+        <result property="blockHash"    column="block_hash"    />
+        <result property="blockNumber"    column="block_number"    />
+        <result property="contractAddress"    column="contract_address"    />
+        <result property="creates"    column="creates"    />
+        <result property="feePercent"    column="fee_percent"    />
+        <result property="fromAddr"    column="from_addr"    />
+        <result property="gas"    column="gas"    />
+        <result property="gasPrice"    column="gas_price"    />
+        <result property="gasUsed"    column="gas_used"    />
+        <result property="input"    column="input"    />
+        <result property="metaAddress"    column="meta_address"    />
+        <result property="nonce"    column="nonce"    />
+        <result property="timestamp"    column="timestamp"    />
+        <result property="toAddr"    column="to_addr"    />
+        <result property="transactionIndex"    column="transaction_index"    />
+        <result property="txstatus"    column="txstatus"    />
+        <result property="value"    column="value"    />
+    </resultMap>
+
+    <sql id="selectTransactionInfoVo">
+        select thash, actual_data, block_hash, block_number, contract_address, creates, fee_percent, from_addr, gas, gas_price, gas_used, input, meta_address, nonce, `timestamp`, to_addr, transaction_index, txstatus, value from transaction_info
+    </sql>
+
+    <select id="selectTransactionInfoList" parameterType="TransactionInfo" resultMap="TransactionInfoResult">
+        <include refid="selectTransactionInfoVo"/>
+        <where>  
+            <if test="thash != null  and thash != ''"> and thash = #{thash}</if>
+            <if test="fromAddr != null  and fromAddr != ''"> and from_addr = #{fromAddr}</if>
+            <if test="params.beginTimestamp != null and params.beginTimestamp != '' and params.endTimestamp != null and params.endTimestamp != ''"> and timestamp between #{params.beginTimestamp} and #{params.endTimestamp}</if>
+            <if test="toAddr != null  and toAddr != ''"> and to_addr = #{toAddr}</if>
+            <if test="txstatus != null  and txstatus != ''"> and txstatus = #{txstatus}</if>
+        </where>
+        order by timestamp desc
+    </select>
+    
+    <select id="selectTransactionInfoByThash" parameterType="String" resultMap="TransactionInfoResult">
+        <include refid="selectTransactionInfoVo"/>
+        where thash = #{thash}
+    </select>
+        
+    <insert id="insertTransactionInfo" parameterType="TransactionInfo">
+        insert into transaction_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="thash != null">thash,</if>
+            <if test="actualData != null">actual_data,</if>
+            <if test="blockHash != null">block_hash,</if>
+            <if test="blockNumber != null">block_number,</if>
+            <if test="contractAddress != null">contract_address,</if>
+            <if test="creates != null">creates,</if>
+            <if test="feePercent != null">fee_percent,</if>
+            <if test="fromAddr != null and fromAddr != ''">from_addr,</if>
+            <if test="gas != null">gas,</if>
+            <if test="gasPrice != null">gas_price,</if>
+            <if test="gasUsed != null">gas_used,</if>
+            <if test="input != null">input,</if>
+            <if test="metaAddress != null">meta_address,</if>
+            <if test="nonce != null">nonce,</if>
+            <if test="timestamp != null">timestamp,</if>
+            <if test="toAddr != null">to_addr,</if>
+            <if test="transactionIndex != null">transaction_index,</if>
+            <if test="txstatus != null">txstatus,</if>
+            <if test="value != null">value,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="thash != null">#{thash},</if>
+            <if test="actualData != null">#{actualData},</if>
+            <if test="blockHash != null">#{blockHash},</if>
+            <if test="blockNumber != null">#{blockNumber},</if>
+            <if test="contractAddress != null">#{contractAddress},</if>
+            <if test="creates != null">#{creates},</if>
+            <if test="feePercent != null">#{feePercent},</if>
+            <if test="fromAddr != null and fromAddr != ''">#{fromAddr},</if>
+            <if test="gas != null">#{gas},</if>
+            <if test="gasPrice != null">#{gasPrice},</if>
+            <if test="gasUsed != null">#{gasUsed},</if>
+            <if test="input != null">#{input},</if>
+            <if test="metaAddress != null">#{metaAddress},</if>
+            <if test="nonce != null">#{nonce},</if>
+            <if test="timestamp != null">#{timestamp},</if>
+            <if test="toAddr != null">#{toAddr},</if>
+            <if test="transactionIndex != null">#{transactionIndex},</if>
+            <if test="txstatus != null">#{txstatus},</if>
+            <if test="value != null">#{value},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTransactionInfo" parameterType="TransactionInfo">
+        update transaction_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="actualData != null">actual_data = #{actualData},</if>
+            <if test="blockHash != null">block_hash = #{blockHash},</if>
+            <if test="blockNumber != null">block_number = #{blockNumber},</if>
+            <if test="contractAddress != null">contract_address = #{contractAddress},</if>
+            <if test="creates != null">creates = #{creates},</if>
+            <if test="feePercent != null">fee_percent = #{feePercent},</if>
+            <if test="fromAddr != null and fromAddr != ''">from_addr = #{fromAddr},</if>
+            <if test="gas != null">gas = #{gas},</if>
+            <if test="gasPrice != null">gas_price = #{gasPrice},</if>
+            <if test="gasUsed != null">gas_used = #{gasUsed},</if>
+            <if test="input != null">input = #{input},</if>
+            <if test="metaAddress != null">meta_address = #{metaAddress},</if>
+            <if test="nonce != null">nonce = #{nonce},</if>
+            <if test="timestamp != null">`timestamp` = #{timestamp},</if>
+            <if test="toAddr != null">to_addr = #{toAddr},</if>
+            <if test="transactionIndex != null">transaction_index = #{transactionIndex},</if>
+            <if test="txstatus != null">txstatus = #{txstatus},</if>
+            <if test="value != null">value = #{value},</if>
+        </trim>
+        where thash = #{thash}
+    </update>
+
+    <delete id="deleteTransactionInfoByThash" parameterType="String">
+        delete from transaction_info where thash = #{thash}
+    </delete>
+
+    <delete id="deleteTransactionInfoByThashs" parameterType="String">
+        delete from transaction_info where thash in 
+        <foreach item="thash" collection="array" open="(" separator="," close=")">
+            #{thash}
+        </foreach>
+    </delete>
+
+</mapper>
