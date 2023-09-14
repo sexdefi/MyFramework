@@ -65,9 +65,9 @@ public class TransactionInfoController extends BaseController
 
 //            params.put("beginTimestamp", beginTimeStamp - 8 * 60 * 60 );
 //            params.put("endTimestamp", endTimeStamp - 8 * 60 * 60 );
-
-            params.put("beginTimestamp", beginTimeStamp);
-            params.put("endTimestamp", endTimeStamp);
+// 生产环境需要减去8小时，开发环境不需要
+            params.put("beginTimestamp", beginTimeStamp - 8 * 60 * 60 );
+            params.put("endTimestamp", endTimeStamp - 8 * 60 * 60 );
         }
         // 如果transactionInfo中的txstatus不为空，则判断是否是"成功"，如果是，则将其转换为0x1，否则转换为0x0
         if (transactionInfo.getTxstatus() != null && !transactionInfo.getTxstatus().equals("")) {
