@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.blacklist.mapper.BlacklistMapper">
+    
+    <resultMap type="Blacklist" id="BlacklistResult">
+        <result property="id"    column="id"    />
+        <result property="addr"    column="addr"    />
+        <result property="remark"    column="remark"    />
+        <result property="enable"    column="enable"    />
+    </resultMap>
+
+    <sql id="selectBlacklistVo">
+        select id, addr, remark, enable from blacklist
+    </sql>
+
+    <select id="selectBlacklistList" parameterType="Blacklist" resultMap="BlacklistResult">
+        <include refid="selectBlacklistVo"/>
+        <where>  
+            <if test="addr != null  and addr != ''"> and addr = #{addr}</if>
+            <if test="enable != null "> and enable = #{enable}</if>
+        </where>
+    </select>
+    
+    <select id="selectBlacklistById" parameterType="Long" resultMap="BlacklistResult">
+        <include refid="selectBlacklistVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertBlacklist" parameterType="Blacklist" useGeneratedKeys="true" keyProperty="id">
+        insert into blacklist
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="addr != null and addr != ''">addr,</if>
+            <if test="remark != null">remark,</if>
+            <if test="enable != null">enable,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="addr != null and addr != ''">#{addr},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="enable != null">#{enable},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBlacklist" parameterType="Blacklist">
+        update blacklist
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="addr != null and addr != ''">addr = #{addr},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="enable != null">enable = #{enable},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBlacklistById" parameterType="Long">
+        delete from blacklist where id = #{id}
+    </delete>
+
+    <delete id="deleteBlacklistByIds" parameterType="String">
+        delete from blacklist where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

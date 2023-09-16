@@ -30,7 +30,6 @@ public class AirdropDto {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -44,7 +43,6 @@ public class AirdropDto {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -59,8 +57,21 @@ public class AirdropDto {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
+
+    public boolean isBatchExist(String batchId){
+        try {
+            String sql = "select count(*) from airdrop where  result=?";
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, batchId);
+            if (count == 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
