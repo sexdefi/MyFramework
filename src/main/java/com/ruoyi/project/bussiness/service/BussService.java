@@ -502,6 +502,13 @@ public class BussService {
             }
 
             if(isAirDrop){
+                // 插入批次号
+                boolean b = airdropDto.SaveAirdropResultToDb("", "", "", "", 0l, 1l, batchId);
+                if (!b) {
+                    return "空投失败,插入批次号失败";
+                }
+
+
                 String res = airdropGasForListNew(list, batchId);
                 if (!res.startsWith("success")) {
                     return "空投失败";
