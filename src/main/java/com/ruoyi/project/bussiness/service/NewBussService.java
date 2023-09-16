@@ -35,10 +35,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@Controller
-@RequestMapping("/newbuss")
-@ApiOperation(value = "GasFee", notes = "New空投GAS")
-@Api(value = "GasFee", tags = {"GasFee"})
+//@Controller
+//@RequestMapping("/newbuss")
+//@ApiOperation(value = "GasFee", notes = "New空投GAS")
+//@Api(value = "GasFee", tags = {"GasFee"})
 @DataSource(value = DataSourceType.SLAVE)
 //只需要在需要切换数据源的方法上使用该注解即可
 public class NewBussService {

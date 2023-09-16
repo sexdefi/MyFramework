@@ -20,3 +20,7 @@ values('黑名单删除', @parentId, '4',  '#',  'F', '0', 'bus:blacklist:remove
 
 insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
 values('黑名单导出', @parentId, '5',  '#',  'F', '0', 'bus:blacklist:export',       '#', 'admin', sysdate(), '', null, '');
+
+
+
+

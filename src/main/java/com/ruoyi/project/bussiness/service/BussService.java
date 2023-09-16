@@ -4,10 +4,6 @@ import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.annotation.Log;
 import com.ruoyi.framework.aspectj.lang.enums.BusinessType;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
-import com.ruoyi.project.bus.Profit.service.IProfitLogService;
-import com.ruoyi.project.bus.airdrop.service.IAirdropService;
-import com.ruoyi.project.bus.batch.service.IAirdropBatchLogService;
-import com.ruoyi.project.bus.blacklist.domain.Blacklist;
 import com.ruoyi.project.bussiness.common.BusConfigService;
 import com.ruoyi.project.bussiness.mapper.AirdropDto;
 import io.swagger.annotations.Api;
@@ -51,7 +47,6 @@ import java.util.*;
 @ApiOperation(value = "GasFee", notes = "空投GAS")
 @Api(value = "GasFee", tags = {"GasFee"})
 @DataSource(value = DataSourceType.SLAVE)
-//只需要在需要切换数据源的方法上使用该注解即可
 public class BussService {
 
     @Autowired
@@ -378,252 +373,159 @@ public class BussService {
         }
     }
 
-    public String SQL_GAS_PAGE = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr ORDER BY from_addr DESC LIMIT %d,%d;";
+    public String SQL_GAS_PAGE = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr ORDER BY from_addr asc LIMIT %d,%d;";
+//
+//    @GetMapping("/agetAirdropGasBatch")
+//    @ResponseBody
+//    @ApiOperation(value = "agetAirdropGasBatch", notes = "获取当前日期的前一天的时间段来空投")
+//    public String agetAirdropGasBatch(int period, int pageNo, int pageSize) {
+//        try {
+//            Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
+//            Date dateEnd = DateUtils.addSeconds(dateHour, 5);
+//            Date dateStart = DateUtils.addHours(dateEnd, -1 * period);
+//            // 获取时间戳
+//            Long start = dateStart.getTime() / 1000;
+//            Long end = dateEnd.getTime() / 1000;
+//
+//            String batchId = new SimpleDateFormat("yyyyMMdd-HH").format(dateStart) + "-" + pageNo;
+//            // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
+//            StringBuffer sb = new StringBuffer();
+//            if (airdropDto.isBatchExist(batchId)) {
+//                System.out.println("batch:" + batchId + " 已经空投过了");
+//                sb.append("batch:" + batchId + " 已经空投过").append("\n");
+//            }
+//
+//            List list = getSepcGasLastDayForBatch(start, end, pageNo, pageSize);
+//
+//            if (list.size() == 0) {
+//                return "没有空投数据";
+//            }
+////            String res = airdropGasForListNew(list, batchId);
+////            if (!res.startsWith("success")) {
+////                return "空投失败";
+////            }
+////            sb.append("查询成功，batchId:" + batchId + " hash:" + res.substring(8) + "\n");
+//
+//            sb.append("空投地址数量：" + list.size() + "\n");
+//            for (int i = 0; i < list.size(); i++) {
+//                Map map = (Map) list.get(i);
+//                BigDecimal gasBig = new BigDecimal((Double) map.get("gas"));
+//                String gasStr = gasBig.toPlainString();
+//                sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
+//            }
+//            return sb.toString();
+//        } catch (Exception e) {
+//            return "过程异常";
+//        }
+//    }
 
-    @GetMapping("/agetAirdropGasBatch")
-    @ResponseBody
-    @ApiOperation(value = "agetAirdropGasBatch", notes = "获取当前日期的前一天的时间段来空投")
-    public String agetAirdropGasBatch(int index,int offset,int pageSize) {
-        try {
-            Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
-            // 5秒后
-            Date dateEnd = DateUtils.addSeconds(dateHour, 5);
-            // 24小时前
-            Date dateStart = DateUtils.addHours(dateEnd, -1  * offset) ;
-            // 获取时间戳
-            Long start = dateStart.getTime() / 1000;
-            Long end = dateEnd.getTime() / 1000;
 
+    public int HOUR_BATCH = 1;
+    public int DAY_BATCH = 24;
+    public int PAGE_SIZE = 200;
 
-            List list = getSepcGasLastDayForBatch(start, end, index, pageSize);
-            if (list.size() == 0) {
-                return "没有空投数据";
-            }
+    public int PASSWORD = 789789;
 
-            StringBuffer sb = new StringBuffer();
-            sb.append("空投地址数量：" + list.size() + "\n");
-            for (int i = 0; i < list.size(); i++) {
-                Map map = (Map) list.get(i);
-                // 将gas从BigDecimal转为String类型，不用科学记数法
-                BigDecimal gasBig =  new BigDecimal ((Double) map.get("gas"));
-                String gasStr = gasBig.toPlainString();
-                sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
-            }
-            return sb.toString();
-
-        } catch (Exception e) {
-            return "查询过程异常";
-        }
+    public String hourBatch1() {
+        return airdropGasHourBatch(HOUR_BATCH, 0, PAGE_SIZE,PASSWORD);
     }
 
-
-    public  int HOUR_BATCH = 1;
-    public  int DAY_BATCH = 24;
-    public  int PAGE_SIZE = 200;
-
-    public String hourBatch1(){
-        return airdropGasHourBatch(0,HOUR_BATCH,PAGE_SIZE);
+    public String hourBatch2() {
+        return airdropGasHourBatch(HOUR_BATCH, 1, PAGE_SIZE,PASSWORD);
     }
 
-    public String hourBatch2(){
-        return airdropGasHourBatch(1,HOUR_BATCH,PAGE_SIZE);
+    public String hourBatch3() {
+        return airdropGasHourBatch(HOUR_BATCH, 2, PAGE_SIZE,PASSWORD);
     }
 
-    public String hourBatch3(){
-        return airdropGasHourBatch(2,HOUR_BATCH,PAGE_SIZE);
+    public String hourBatch4() {
+        return airdropGasHourBatch(HOUR_BATCH, 3, PAGE_SIZE,PASSWORD);
     }
 
-    public String hourBatch4(){
-        return airdropGasHourBatch(3,HOUR_BATCH,PAGE_SIZE);
+    public String hourBatch5() {
+        return airdropGasHourBatch(HOUR_BATCH, 4, PAGE_SIZE,PASSWORD);
     }
 
-    public String hourBatch5(){
-        return airdropGasHourBatch(4,HOUR_BATCH,PAGE_SIZE);
+    public String dayBatch1() {
+        return airdropGasHourBatch(DAY_BATCH, 0, PAGE_SIZE,PASSWORD);
     }
 
-    public String dayBatch1(){
-        return airdropGasHourBatch(0,DAY_BATCH,PAGE_SIZE);
+    public String dayBatch2() {
+        return airdropGasHourBatch(DAY_BATCH, 1, PAGE_SIZE,PASSWORD);
     }
 
-    public String dayBatch2(){
-        return airdropGasHourBatch(1,DAY_BATCH,PAGE_SIZE);
+    public String dayBatch3() {
+        return airdropGasHourBatch(DAY_BATCH, 2, PAGE_SIZE,PASSWORD);
     }
 
-    public String dayBatch3(){
-        return airdropGasHourBatch(2,DAY_BATCH,PAGE_SIZE);    }
-
-    public String dayBatch4(){
-        return airdropGasHourBatch(3,DAY_BATCH,PAGE_SIZE);    }
-
-    public String dayBatch5(){
-        return airdropGasHourBatch(4,DAY_BATCH,PAGE_SIZE);
+    public String dayBatch4() {
+        return airdropGasHourBatch(DAY_BATCH, 3, PAGE_SIZE,PASSWORD);
     }
 
+    public String dayBatch5() {
+        return airdropGasHourBatch(DAY_BATCH, 4, PAGE_SIZE,PASSWORD);
+    }
 
 
     @GetMapping("/airdropGasHourBatch")
     @ResponseBody
     @ApiOperation(value = "airdropGasHourBatch", notes = "按照当前日期的前一个小时的时间段来空投")
-    public String airdropGasHourBatch(int index,int offset,int limit) {
+    public String airdropGasHourBatch(int period, int pageNo, int pageSize, int password) {
         try {
+            boolean isAirDrop = password == PASSWORD;
+
             Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
-            // 5秒后
             Date dateEnd = DateUtils.addSeconds(dateHour, 5);
-            // 24小时前
-            Date dateStart = DateUtils.addHours(dateEnd, -1 * offset);
+            Date dateStart = DateUtils.addHours(dateEnd, -1 * period);
             // 获取时间戳
             Long start = dateStart.getTime() / 1000;
             Long end = dateEnd.getTime() / 1000;
 
-            int pageSize = limit;
-
-            List list = getSepcGasLastDayForBatch(start, end, index, pageSize);
-
+            // 这个地方，如果切换下面代码的顺序，会发生动态数据源切换，而导致SQL查询失败
+            List list = getSepcGasLastDayForBatch(start, end, pageNo, pageSize);
 
             if (list.size() == 0) {
                 return "没有空投数据";
             }
 
-            String pattern = "yyyyMMdd-HH";
-
-            // batchId是Start字符串yyyyMMdd格式
-            String batchHour = new SimpleDateFormat(pattern).format(dateStart);
-            String batchId = batchHour + "" + index;
-
+            String batchId = new SimpleDateFormat("yyyyMMdd-HH").format(dateStart) + "-" + pageNo;
             // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
+            StringBuffer sb = new StringBuffer();
             if (airdropDto.isBatchExist(batchId)) {
                 System.out.println("batch:" + batchId + " 已经空投过了");
-                return "batch:" + batchId + " 已经空投过了";
-            }
-
-            String res = airdropGasForListNew(list, batchId);
-
-            if (res.startsWith("success")) {
-                StringBuffer sb = new StringBuffer();
-                sb.append("空投成功，batchId:" + batchId + " hash:" + res.substring(8));
-                sb.append("，空投地址数量：" + list.size() + "\n");
-                for (int i = 0; i < list.size(); i++) {
-                    Map map = (Map) list.get(i);
-                    BigDecimal gasBig =  new BigDecimal ((Double) map.get("gas"));
-                    String gasStr = gasBig.toPlainString();
-                    sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
+                sb.append("batch:" + batchId + " 已经空投过").append("\n");
+                if(isAirDrop){
+                    return sb.toString();
+                }else{
+                    sb.append("查询成功，batchId:" + batchId + " hash:" + "已经空投过了").append("\n");
                 }
-
-                return sb.toString();
-            } else {
-                return "空投失败";
             }
+
+            if(isAirDrop){
+                String res = airdropGasForListNew(list, batchId);
+                if (!res.startsWith("success")) {
+                    return "空投失败";
+                }
+                sb.append("查询成功，batchId:" + batchId + " hash:" + res.substring(8) + "\n");
+            }
+
+            sb.append("空投地址数量：" + list.size() + "\n");
+            for (int i = 0; i < list.size(); i++) {
+                Map map = (Map) list.get(i);
+                BigDecimal gasBig = new BigDecimal((Double) map.get("gas"));
+                String gasStr = gasBig.toPlainString();
+                sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
+            }
+            return sb.toString();
         } catch (Exception e) {
-            return "空投过程异常";
+            return "过程异常";
         }
     }
 
 
-    @GetMapping("/getDateUtilsDemo")
-    @ResponseBody
-    @ApiOperation(value = "getDateUtilsDemo", notes = "getDateUtilsDemo")
-    public List getDemo() throws ParseException {
-        List<String> list = new ArrayList<>();
-        String str = "2019-10-11 22:33:44";
-        Date date = DateUtils.parseDate(str, "yyyy-MM-dd HH:mm:ss");
-
-        String key1 = "YEAR";
-        String value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.YEAR));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "MONTH";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.MONTH));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "DAY_OF_MONTH";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.DAY_OF_MONTH));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "HOUR_OF_DAY";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.HOUR_OF_DAY));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "HOUR";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.HOUR));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "MINUTE";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.MINUTE));
-        list.add(key1 + " :  " + value1);
-
-        key1 = "SECOND";
-        value1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(DateUtils.truncate(date, Calendar.SECOND));
-        list.add(key1 + " :  " + value1);
-
-        return list;
-    }
-
-//
-//    @GetMapping("/airdropGasDayBatch")
-//    @ResponseBody
-//    @ApiOperation(value = "airdropGasDayBatch", notes = "按照当前日期的前一天的时间段来空投")
-//    public String airdropGasDayBatch (int index) {
-//        try {
-//            // 精确获取每天的快照时间
-//            // 这个地方需要精确时间，获取当前时间的0:0分5秒
-//            // 直接用这个方法肯定有时区的问题，目前在无法充分测试的情况下，还是用下面的方法：当前时间减去24小时，然后再加上5秒，来获取昨天的时间，而不是用DAY_OF_MONTH
-//            Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
-//            // 5秒后
-//            Date dateEnd = DateUtils.addSeconds(dateHour, 5);
-//            // 24小时前
-//            Date dateStart = DateUtils.addHours(dateEnd, -24);
-//
-////            Date dateHour = DateUtils.truncate(new Date(), Calendar.DAY_OF_MONTH); // 举例：2019-12-12 12:12:12 ，使用Calendar.HOUR_OF_DAY，精确到天，可以避免跨天的问题
-////            // 5秒后
-////            Date dateEnd = DateUtils.addSeconds(dateHour, 5);
-////            // 24小时前
-////            Date dateStart = DateUtils.addDays(dateEnd, -1);
-//            // 获取时间戳
-//            Long start = dateStart.getTime() / 1000;
-//            Long end = dateEnd.getTime() / 1000;
-//
-//            int pageSize = 200;
-//
-//            List list = getSepcGasLastDayForBatch(start, end, index, pageSize);
-//
-//            if (list.size() == 0) {
-//                return "没有空投数据";
-//            }
-//
-//            // batchId是Start字符串yyyyMMdd格式
-//            String batchDay = new SimpleDateFormat("yyyyMMdd").format(dateStart);
-//            String batchId = batchDay + "-" + index;
-//
-//            // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
-//            if (airdropDto.isBatchExist(batchId)) {
-//                System.out.println("batch:" + batchId + " 已经空投过了");
-//                return "batch:" + batchId + " 已经空投过了";
-//            }
-//
-//            String res = airdropGasForListNew(list, batchId);
-//
-//            if (res.startsWith("success")) {
-//                StringBuffer sb = new StringBuffer();
-//                sb.append("空投成功，batchId:" + batchId + " hash:" + res.substring(8));
-//                sb.append("，空投地址数量：" + list.size() + "\n");
-//                for (int i = 0; i < list.size(); i++) {
-//                    Map map = (Map) list.get(i);
-//                    BigDecimal gasBig =  new BigDecimal ((Double) map.get("gas"));
-//                    String gasStr = gasBig.toPlainString();
-//                    sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
-//                }
-//
-//                return sb.toString();
-//            } else {
-//                return "空投失败";
-//            }
-//
-//        } catch (Exception e) {
-//            return "空投过程异常";
-//        }
-//    }
-
-    // 指定时间段查询
+    // 指定时间段查
+    // 询
+    @DataSource(value = DataSourceType.SLAVE)
     public List getSepcGasLastDayForBatch(Long start, Long end, int index, int pageSize) {
         String tokenAddress = config.getConfig("TOKEN_ADDRESS", "0x9599695608BE59a420d7b9A32f3AbFc362d88d36");
         Integer amount = config.getConfig("OVER_AMOUNT", 500);
@@ -750,7 +652,7 @@ public class BussService {
             // adDate为当前时间用yyyy-MM-dd格式化后的字符串
             String adDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-            airdropDto.SaveAirdropResultToDb(from_addr_list.get(0), gasStr, adDate, hash, 0l, 1l, batchId);
+            airdropDto.SaveAirdropResultToDb("空投成功", gasStr, adDate, hash, 0l, 1l, batchId);
             return "success," + hash;
         } catch (Exception ex) {
             System.out.println("ex:" + ex);
