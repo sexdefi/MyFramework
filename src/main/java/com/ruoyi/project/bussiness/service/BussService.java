@@ -376,51 +376,6 @@ public class BussService {
     }
 
     public String SQL_GAS_PAGE = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr ORDER BY from_addr asc LIMIT %d,%d;";
-//
-//    @GetMapping("/agetAirdropGasBatch")
-//    @ResponseBody
-//    @ApiOperation(value = "agetAirdropGasBatch", notes = "获取当前日期的前一天的时间段来空投")
-//    public String agetAirdropGasBatch(int period, int pageNo, int pageSize) {
-//        try {
-//            Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
-//            Date dateEnd = DateUtils.addSeconds(dateHour, 5);
-//            Date dateStart = DateUtils.addHours(dateEnd, -1 * period);
-//            // 获取时间戳
-//            Long start = dateStart.getTime() / 1000;
-//            Long end = dateEnd.getTime() / 1000;
-//
-//            String batchId = new SimpleDateFormat("yyyyMMdd-HH").format(dateStart) + "-" + pageNo;
-//            // 判断是否已经空投过了,如果已经空投过了，就不再空投。为了防止定时任务重复空投
-//            StringBuffer sb = new StringBuffer();
-//            if (airdropDto.isBatchExist(batchId)) {
-//                System.out.println("batch:" + batchId + " 已经空投过了");
-//                sb.append("batch:" + batchId + " 已经空投过").append("\n");
-//            }
-//
-//            List list = getSepcGasLastDayForBatch(start, end, pageNo, pageSize);
-//
-//            if (list.size() == 0) {
-//                return "没有空投数据";
-//            }
-////            String res = airdropGasForListNew(list, batchId);
-////            if (!res.startsWith("success")) {
-////                return "空投失败";
-////            }
-////            sb.append("查询成功，batchId:" + batchId + " hash:" + res.substring(8) + "\n");
-//
-//            sb.append("空投地址数量：" + list.size() + "\n");
-//            for (int i = 0; i < list.size(); i++) {
-//                Map map = (Map) list.get(i);
-//                BigDecimal gasBig = new BigDecimal((Double) map.get("gas"));
-//                String gasStr = gasBig.toPlainString();
-//                sb.append(map.get("from_addr")).append(",").append(gasStr).append("\n");
-//            }
-//            return sb.toString();
-//        } catch (Exception e) {
-//            return "过程异常";
-//        }
-//    }
-
 
     public int HOUR_BATCH = 1;
     public int DAY_BATCH = 24;
@@ -744,90 +699,74 @@ public class BussService {
     }
 
     // 快照
-    @GetMapping("/dealsnapshot1")
+    @GetMapping("/batchAirdropByBatchIdManual")
     @ResponseBody
-    @ApiOperation(value = "快照", notes = "手动处理快照空投")
-    public String dealMannulSnapshot(int i) {
+    @ApiOperation(value = "手动处理快照空投", notes = "手动处理快照空投")
+    public String batchAirdropByBatchIdManual(int i) {
         return airdropBatchForSnapshot(DAY_BATCH, i);
     }
 
+//
+//    public String ndayBatch1() {
+//        return airdropBatchForSnapshot(DAY_BATCH, 0);
+//    }
+//
 
-    public String ndayBatch1() {
-        return airdropBatchForSnapshot(DAY_BATCH, 0);
-    }
-
-    public String ndayBatch2() {
-        return airdropBatchForSnapshot(DAY_BATCH, 1);
-    }
-
-    public String ndayBatch3() {
-        return airdropBatchForSnapshot(DAY_BATCH, 2);
-    }
-
-    public String ndayBatch4() {
-        return airdropBatchForSnapshot(DAY_BATCH, 3);
-    }
-
-    public String ndayBatch5() {
-        return airdropBatchForSnapshot(DAY_BATCH, 4);
-    }
-
-    public String ndayBatch6() {
-        return airdropBatchForSnapshot(DAY_BATCH, 5);
-    }
-
-    public String ndayBatch7() {
-        return airdropBatchForSnapshot(DAY_BATCH, 6);
-    }
-
-    public String ndayBatch8() {
-        return airdropBatchForSnapshot(DAY_BATCH, 7);
-    }
-
-    public String ndayBatch9() {
-        return airdropBatchForSnapshot(DAY_BATCH, 8);
-    }
-
-    public String ndayBatch10() {
-        return airdropBatchForSnapshot(DAY_BATCH, 9);
-    }
-
-    public String ndayBatch11() {
-        return airdropBatchForSnapshot(DAY_BATCH, 10);
-    }
-
-    public String ndayBatch12() {
-        return airdropBatchForSnapshot(DAY_BATCH, 11);
-    }
-
-    public String ndayBatch13() {
-        return airdropBatchForSnapshot(DAY_BATCH, 12);
-    }
-
-    public String ndayBatch14() {
-        return airdropBatchForSnapshot(DAY_BATCH, 13);
-    }
-
-    public String ndayBatch15() {
-        return airdropBatchForSnapshot(DAY_BATCH, 14);
-    }
-
-    @GetMapping("/airdropBatchForSnapshot")
+    // 空投，是否可以循环空投，如果空投失败，是否可以跳过，继续空投
+    @GetMapping("/batchAirdropToday")
     @ResponseBody
-    @ApiOperation(value = "airdropBatchForSnapshot", notes = "空投快照")
+    @ApiOperation(value = "今日快照空投", notes = "快照空投")
+    public String batchAirdropToday(){
+        int batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
+        if(batchTotal == -1){
+            // 可能是快照还没有生成，需要重新生成快照
+            batchSnapshotToday();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
+        if(batchTotal == -1){
+            return "快照生成失败";
+        }
+
+        for(int i = 0; i < batchTotal; i++){
+            airdropBatchForSnapshot(DAY_BATCH, i);
+            // 休眠10秒
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return "空投完成";
+    }
+
+//    @GetMapping("/airdropBatchForSnapshot")
+//    @ResponseBody
+//    @ApiOperation(value = "airdropBatchForSnapshot", notes = "空投快照")
     public String airdropBatchForSnapshot(int period, int i) {
         String batchId = getBatchId(period, i);
-        if(isBatchidExist(batchId)){
+        int batchTotal = getBatchDayCache(getBatch(period));
+        if (batchTotal < i) {
+            return "没有快照,不用空投";
+        }
+        if(isBatchidExistCache(batchId)){
             return "已经空投过了";
         }
-        setBatchidStatus(batchId, "1"); // 1表示正在空投
+        setBatchidStatusCache(batchId, "1"); // 1表示正在空投
         List<Map<String, Object>> list  = getSnapshot(batchId);
+        if(list == null){
+            return "没有快照,请检查！！";
+        }
         String s = airdropGasForListNew(list, batchId);
-        setBatchidStatus(batchId, "2"); // 2表示空投完成
+        setBatchidStatusCache(batchId, "2"); // 2表示空投完成
         if(s.startsWith("success")){
             // split s with ,
             String[] split = s.split(",");
-            setBatchidStatus(batchId, split[1]); // tx表示空投成功
+            setBatchidStatusCache(batchId, split[1]); // tx表示空投成功
         }
         return s;
     }
@@ -842,25 +781,30 @@ public class BussService {
         }
     }
 
-    @GetMapping("/snapshotDay")
+    @GetMapping("/batchSnapshotToday")
     @ResponseBody
-    @ApiOperation(value = "snapshotDay", notes = "按照当前日期的前一个小时的时间段来空投")
-    public String snapshotDay() {
-        String out = snapshotDate(24);
-        return out;
+    @ApiOperation(value = "batchSnapshotToday", notes = "按照当前日期的前一个小时的时间段来空投")
+    public String batchSnapshotToday() {
+        return snapshotDate(24);
     }
 
-    public String getBatchId(int period, int i){
+    public String getBatch(int period){
         Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
         Date dateEnd = DateUtils.addSeconds(dateHour, 5);
         Date dateStart = DateUtils.addHours(dateEnd, -1 * period);
-        String batchId = new SimpleDateFormat("yyyyMMdd-HH").format(dateStart) + "-" + i;
+        String batch = new SimpleDateFormat("yyyyMMdd-HH").format(dateStart);
+        return batch;
+    }
+
+    public String getBatchId(int period, int i){
+        String batch = getBatch(period);
+        String batchId = batch + "-" + i;
         return batchId;
     }
 
-    @GetMapping("/snapshotDate")
-    @ResponseBody
-    @ApiOperation(value = "snapshotDate", notes = "按照指定时间段来快照")
+//    @GetMapping("/batchSnapshotToday")
+//    @ResponseBody
+//    @ApiOperation(value = "snapshotDate", notes = "按照指定时间段来快照")
     public String snapshotDate(int period) {
         try {
             Date dateHour = DateUtils.truncate(new Date(), Calendar.HOUR_OF_DAY); // 举例：2019-12-12 00:00:00，精确到小时
@@ -878,7 +822,7 @@ public class BussService {
             }
             //  生成批次号，根据list的数量，每200个生成一个批次号，保存到缓存中。缓存中的数据，每天定时清理一次。key为batchId，value为list
             int batchCount = list.size() / 200 + 1;
-//            CacheUtils.put("snapshot",new SimpleDateFormat("yyyyMMdd-HH").format(dateStart) , batchCount);
+            setBatchDayCache(getBatch(period), batchCount); // 1,2,3,4,5,6
             for (int i = 0; i < batchCount; i++) {
                 int startIdx = i * 200;
                 int endIdx = (i + 1) * 200;
@@ -895,6 +839,28 @@ public class BussService {
         }
     }
 
+    @GetMapping("/batchGetListByBatchId")
+    @ResponseBody
+    @ApiOperation(value = "batchGetListByBatchId", notes = "获取批次详情")
+    public String batchGetListByBatchId(String batchId) {
+        List list = getSnapshot(batchId);
+        if (list == null) {
+            return "没有快照";
+        }
+        StringBuffer sb = new StringBuffer();
+        sb.append("批次号：" + batchId + "\n");
+        for (int i = 0; i < list.size(); i++) {
+            Map map = (Map) list.get(i);
+            sb.append(map.get("from_addr") + ",");
+            Double amount = (Double) map.get("gas");
+            BigDecimal bigDecimal = new BigDecimal(amount);
+            sb.append(bigDecimal.toPlainString()).append("\n");
+        }
+        return sb.toString();
+    }
+
+
+
     //TODO 缓存用户的余额
 
     // 添加缓存
@@ -907,17 +873,32 @@ public class BussService {
         return CacheUtils.get("snapshot",batchid);
     }
 
-    public void setBatchidStatus(String batchid, String value) {
+    public void setBatchidStatusCache(String batchid, String value) {
         CacheUtils.put("batch",batchid, value);
     }
 
-    public String getBatchidStatus(String batchid) {
+    public String getBatchidStatusCache(String batchid) {
         return (String) CacheUtils.get("batch",batchid);
     }
 
-    public boolean isBatchidExist(String batchid) {
+    public boolean isBatchidExistCache(String batchid) {
         return CacheUtils.get("batch",batchid) != null;
     }
+
+    public void setBatchDayCache(String batchDay, int count){
+        CacheUtils.put("batchDay",batchDay, count);
+    }
+
+    public int getBatchDayCache(String batchDay){
+        Object o = CacheUtils.get("batchDay",batchDay);
+        if(o == null){
+            return -1;
+        }else{
+            return (int) o;
+        }
+    }
+
+
 
     // 新建一个黑名单表，用来存储黑名单地址。字段包括：id，地址，备注，状态（0：正常，1：删除）
     // 建表语句：
