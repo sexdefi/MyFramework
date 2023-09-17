@@ -858,7 +858,7 @@ public class BussService {
 
 
     //TODO 缓存用户的余额
-
+    //如果改造成按小时空投，就改下snapshot数据的，以及除非那块儿，有一些硬编码
     // 添加缓存
     public void addSnapshotCache(String batchid, Object value) {
         CacheUtils.put("snapshot",batchid, value);
