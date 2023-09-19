@@ -86,6 +86,29 @@
            timeToLiveSeconds="0"
            timeToIdleSeconds="0"
            statistics="false"/>
-    
+
+    <cache name="snapshot"
+              maxEntriesLocalHeap="10000"
+              eternal="true"
+              diskPersistent="false"
+              timeToLiveSeconds="0"
+              timeToIdleSeconds="0"
+              statistics="false"/>
+
+    <cache name="batch"
+           maxEntriesLocalHeap="10000"
+           eternal="true"
+           diskPersistent="false"
+           timeToLiveSeconds="0"
+           timeToIdleSeconds="0"
+           statistics="false"/>
+
+    <cache name="batchDay"
+           maxEntriesLocalHeap="10000"
+           eternal="true"
+           diskPersistent="false"
+           timeToLiveSeconds="0"
+           timeToIdleSeconds="0"
+           statistics="false"/>
 </ehcache>
 	
