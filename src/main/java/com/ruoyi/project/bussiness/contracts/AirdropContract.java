@@ -1,4 +1,4 @@
-package com.ruoyi.project.bussiness.service;
+package com.ruoyi.project.bussiness.contracts;
 
 import io.reactivex.Flowable;
 import io.reactivex.functions.Function;

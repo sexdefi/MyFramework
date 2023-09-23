@@ -2,9 +2,8 @@ package com.ruoyi.project.Utils;
 
 import com.ruoyi.common.utils.CacheUtils;
 import com.ruoyi.project.bussiness.common.BusConfigService;
-import com.ruoyi.project.bussiness.service.AirdropContract;
+import com.ruoyi.project.bussiness.contracts.AirdropContract;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
 import org.web3j.crypto.TransactionEncoder;
@@ -13,7 +12,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.Contract;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;

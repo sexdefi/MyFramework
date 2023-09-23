@@ -1,5 +1,6 @@
 package com.ruoyi.project.bussiness.service;
 
+import com.ruoyi.project.bussiness.contracts.AirdropContract;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
@@ -13,7 +14,7 @@ import org.web3j.utils.Convert;
 import java.math.BigInteger;
 
 @Service
-public class AirdropContractService {
+public class ContractService {
 
     AirdropContract _airdrop = null;
 

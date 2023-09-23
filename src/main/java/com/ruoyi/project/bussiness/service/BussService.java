@@ -2,15 +2,12 @@ package com.ruoyi.project.bussiness.service;
 
 import com.ruoyi.common.utils.CacheUtils;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
-import com.ruoyi.framework.aspectj.lang.annotation.Log;
-import com.ruoyi.framework.aspectj.lang.enums.BusinessType;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
-import com.ruoyi.framework.web.service.CacheService;
 import com.ruoyi.project.bussiness.common.BusConfigService;
+import com.ruoyi.project.bussiness.contracts.AirdropContract;
 import com.ruoyi.project.bussiness.mapper.AirdropDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,23 +21,18 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
-import org.web3j.protocol.core.methods.response.EthGasPrice;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
 import org.web3j.tx.TransactionManager;
-import org.web3j.tx.Transfer;
 import org.web3j.tx.gas.ContractGasProvider;
 
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Numeric;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -489,6 +481,94 @@ public class BussService {
 
     public String SQL_GAS_PAGE = "SELECT  c.from_addr AS from_addr, sum( c.gas_used * c.gas_price ) AS gas  FROM  ( SELECT  from_addr,  gas_used,  gas_price  FROM  account_token a  LEFT JOIN transaction_info b ON a.address = b.from_addr   WHERE   a.token_address = '%s' && convert(a.balance,signed) >= %d && b.txstatus = '0x1'   AND `TIMESTAMP` > %d    AND `TIMESTAMP` <= %d  ) c  GROUP BY  c.from_addr ORDER BY from_addr asc LIMIT %d,%d;";
     public int DAY_BATCH = 24;
+    public int HOUR_BATCH = 1;
+
+    @GetMapping("/batchSnapshotHour")
+    @ResponseBody
+    @ApiOperation(value = "batchSnapshotHour", notes = "按照当前日期的前一个小时的时间段来空投")
+    public String batchSnapshotHour() {
+        return snapshotDate(HOUR_BATCH);
+    }
+
+    @GetMapping("/batchAirdropHour")
+    @ResponseBody
+    @ApiOperation(value = "今日快照空投", notes = "快照空投")
+    public String batchAirdropHour(){
+        int batchTotal = getBatchDayCache(getBatch(HOUR_BATCH));
+        if(batchTotal == -1){
+            // 可能是快照还没有生成，需要重新生成快照
+            batchSnapshotToday();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        batchTotal = getBatchDayCache(getBatch(HOUR_BATCH));
+        if(batchTotal == -1){
+            return "快照生成失败";
+        }
+
+        for(int i = 0; i < batchTotal; i++){
+            airdropBatchForSnapshot(HOUR_BATCH, i);
+            // 休眠10秒
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return "空投完成";
+    }
+
+    @GetMapping("/batchSnapshotToday")
+    @ResponseBody
+    @ApiOperation(value = "batchSnapshotToday", notes = "按照当前日期的前一个小时的时间段来空投")
+    public String batchSnapshotToday() {
+        return snapshotDate(DAY_BATCH);
+    }
+
+//    @GetMapping("/batchAirdropByBatchIdManual")
+//    @ResponseBody
+//    @ApiOperation(value = "手动处理快照空投", notes = "手动处理快照空投")
+//    public String batchAirdropByBatchIdManual(int i) {
+//        return airdropBatchForSnapshot(DAY_BATCH, i);
+//    }
+
+    // 空投，是否可以循环空投，如果空投失败，是否可以跳过，继续空投
+    @GetMapping("/batchAirdropToday")
+    @ResponseBody
+    @ApiOperation(value = "今日快照空投", notes = "快照空投")
+    public String batchAirdropToday(){
+        int batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
+        if(batchTotal == -1){
+            // 可能是快照还没有生成，需要重新生成快照
+            batchSnapshotToday();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
+        if(batchTotal == -1){
+            return "快照生成失败";
+        }
+
+        for(int i = 0; i < batchTotal; i++){
+            airdropBatchForSnapshot(DAY_BATCH, i);
+            // 休眠10秒
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return "空投完成";
+    }
+
+
+
 
     @DataSource(value = DataSourceType.SLAVE)
     public List getSepcGasLastDayForBatch(Long start, Long end, int index, int pageSize) {
@@ -536,7 +616,6 @@ public class BussService {
             System.out.println("web3j = Web3j.build(new HttpService(url));");
             return "Web3未空或者私钥不正确";
         }
-
 
         // 定义两个list，存放所有的from_addr和gas
         List<String> from_addr_list = new ArrayList<>();
@@ -700,49 +779,6 @@ public class BussService {
         return rawTransaction;
     }
 
-    // 快照
-    @GetMapping("/batchAirdropByBatchIdManual")
-    @ResponseBody
-    @ApiOperation(value = "手动处理快照空投", notes = "手动处理快照空投")
-    public String batchAirdropByBatchIdManual(int i) {
-        return airdropBatchForSnapshot(DAY_BATCH, i);
-    }
-
-    // 空投，是否可以循环空投，如果空投失败，是否可以跳过，继续空投
-    @GetMapping("/batchAirdropToday")
-    @ResponseBody
-    @ApiOperation(value = "今日快照空投", notes = "快照空投")
-    public String batchAirdropToday(){
-        int batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
-        if(batchTotal == -1){
-            // 可能是快照还没有生成，需要重新生成快照
-            batchSnapshotToday();
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        batchTotal = getBatchDayCache(getBatch(DAY_BATCH));
-        if(batchTotal == -1){
-            return "快照生成失败";
-        }
-
-        for(int i = 0; i < batchTotal; i++){
-            airdropBatchForSnapshot(DAY_BATCH, i);
-            // 休眠10秒
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return "空投完成";
-    }
-
-//    @GetMapping("/airdropBatchForSnapshot")
-//    @ResponseBody
-//    @ApiOperation(value = "airdropBatchForSnapshot", notes = "空投快照")
     public String airdropBatchForSnapshot(int period, int i) {
         String batchId = getBatchId(period, i);
         int batchTotal = getBatchDayCache(getBatch(period));
@@ -775,13 +811,6 @@ public class BussService {
         }else{
             return null;
         }
-    }
-
-    @GetMapping("/batchSnapshotToday")
-    @ResponseBody
-    @ApiOperation(value = "batchSnapshotToday", notes = "按照当前日期的前一个小时的时间段来空投")
-    public String batchSnapshotToday() {
-        return snapshotDate(24);
     }
 
     public String getBatch(int period){
@@ -818,7 +847,7 @@ public class BussService {
             }
             //  生成批次号，根据list的数量，每200个生成一个批次号，保存到缓存中。缓存中的数据，每天定时清理一次。key为batchId，value为list
             int batchCount = list.size() / 200 + 1;
-            setBatchDayCache(getBatch(period), batchCount); // 1,2,3,4,5,6
+            setBatchDayCache(getBatch(period), batchCount);
             for (int i = 0; i < batchCount; i++) {
                 int startIdx = i * 200;
                 int endIdx = (i + 1) * 200;
