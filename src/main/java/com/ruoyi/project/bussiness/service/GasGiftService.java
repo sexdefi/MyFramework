@@ -427,7 +427,7 @@ public class GasGiftService {
         if(!privateKey.startsWith("0x")){
             privateKey = "0x" + privateKey;
         }
-        RawTransaction rawTransaction = RawTransaction.createEtherTransaction(BigInteger.valueOf(1), BigInteger.valueOf(1_000_000_000_000L), BigInteger.valueOf(21000), fromAddr, amount.toBigInteger());
+        RawTransaction rawTransaction = RawTransaction.createEtherTransaction(BigInteger.valueOf(1), BigInteger.valueOf(1_000_000_000L), BigInteger.valueOf(210000), fromAddr, amount.toBigInteger());
         Credentials credentials = Credentials.create(privateKey);
         byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
         String hexValue = Numeric.toHexString(signedMessage);
