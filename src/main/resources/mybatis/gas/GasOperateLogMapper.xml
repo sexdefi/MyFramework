@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.operate.mapper.GasOperateLogMapper">
+    
+    <resultMap type="GasOperateLog" id="GasOperateLogResult">
+        <result property="id"    column="id"    />
+        <result property="userAddr"    column="userAddr"    />
+        <result property="type"    column="type"    />
+        <result property="amount"    column="amount"    />
+        <result property="optime"    column="optime"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectGasOperateLogVo">
+        select id, userAddr, type, amount, optime, remark from gas_operate_log
+    </sql>
+
+    <select id="selectGasOperateLogList" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
+        <include refid="selectGasOperateLogVo"/>
+        <where>  
+            <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+            <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
+            <if test="optime != null  and optime != ''"> and optime = #{optime}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectGasOperateLogList50" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
+        <include refid="selectGasOperateLogVo"/>
+        <where>
+            <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+            <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
+            <if test="optime != null  and optime != ''"> and optime = #{optime}</if>
+        </where>
+        order by id desc limit 50
+    </select>
+
+    <select id="selectGasOperateLast" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
+        <include refid="selectGasOperateLogVo"/>
+        <where>
+            <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+        </where>
+        order by id desc limit 1
+    </select>
+    
+    <select id="selectGasOperateLogById" parameterType="Long" resultMap="GasOperateLogResult">
+        <include refid="selectGasOperateLogVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertGasOperateLog" parameterType="GasOperateLog" useGeneratedKeys="true" keyProperty="id">
+        insert into gas_operate_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userAddr != null">userAddr,</if>
+            <if test="type != null">type,</if>
+            <if test="amount != null">amount,</if>
+            <if test="optime != null">optime,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userAddr != null">#{userAddr},</if>
+            <if test="type != null">#{type},</if>
+            <if test="amount != null">#{amount},</if>
+            <if test="optime != null">#{optime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateGasOperateLog" parameterType="GasOperateLog">
+        update gas_operate_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userAddr != null">userAddr = #{userAddr},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="optime != null">optime = #{optime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteGasOperateLogById" parameterType="Long">
+        delete from gas_operate_log where id = #{id}
+    </delete>
+
+    <delete id="deleteGasOperateLogByIds" parameterType="String">
+        delete from gas_operate_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
