@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.order.mapper.GasWithdrawLogMapper">
+    
+    <resultMap type="GasWithdrawLog" id="GasWithdrawLogResult">
+        <result property="id"    column="id"    />
+        <result property="userAddr"    column="user_addr"    />
+        <result property="amount"    column="amount"    />
+        <result property="txhash"    column="txhash"    />
+        <result property="optime"    column="optime"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectGasWithdrawLogVo">
+        select id, user_addr, amount, txhash, optime, remark from gas_withdraw_log
+    </sql>
+
+    <select id="selectGasWithdrawLogList" parameterType="GasWithdrawLog" resultMap="GasWithdrawLogResult">
+        <include refid="selectGasWithdrawLogVo"/>
+        <where>  
+            <if test="userAddr != null  and userAddr != ''"> and user_addr = #{userAddr}</if>
+            <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
+            <if test="txhash != null  and txhash != ''"> and txhash = #{txhash}</if>
+            <if test="optime != null  and optime != ''"> and optime = #{optime}</if>
+        </where>
+    </select>
+    
+    <select id="selectGasWithdrawLogById" parameterType="Long" resultMap="GasWithdrawLogResult">
+        <include refid="selectGasWithdrawLogVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertGasWithdrawLog" parameterType="GasWithdrawLog" useGeneratedKeys="true" keyProperty="id">
+        insert into gas_withdraw_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userAddr != null">user_addr,</if>
+            <if test="amount != null">amount,</if>
+            <if test="txhash != null">txhash,</if>
+            <if test="optime != null">optime,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userAddr != null">#{userAddr},</if>
+            <if test="amount != null">#{amount},</if>
+            <if test="txhash != null">#{txhash},</if>
+            <if test="optime != null">#{optime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateGasWithdrawLog" parameterType="GasWithdrawLog">
+        update gas_withdraw_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userAddr != null">user_addr = #{userAddr},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="txhash != null">txhash = #{txhash},</if>
+            <if test="optime != null">optime = #{optime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteGasWithdrawLogById" parameterType="Long">
+        delete from gas_withdraw_log where id = #{id}
+    </delete>
+
+    <delete id="deleteGasWithdrawLogByIds" parameterType="String">
+        delete from gas_withdraw_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

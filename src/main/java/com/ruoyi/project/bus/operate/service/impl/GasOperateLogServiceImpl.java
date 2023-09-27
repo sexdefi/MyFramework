@@ -1,6 +1,9 @@
 package com.ruoyi.project.bus.operate.service.impl;
 
 import java.util.List;
+
+import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
+import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.bus.operate.mapper.GasOperateLogMapper;
@@ -15,6 +18,7 @@ import com.ruoyi.common.utils.text.Convert;
  * @date 2023-09-25
  */
 @Service
+@DataSource(value = DataSourceType.MASTER)
 public class GasOperateLogServiceImpl implements IGasOperateLogService 
 {
     @Autowired

@@ -923,6 +923,7 @@ public class BussService {
 
 
 
+
     // 新建一个黑名单表，用来存储黑名单地址。字段包括：id，地址，备注，状态（0：正常，1：删除）
     // 建表语句：
 //     CREATE TABLE `blacklist` (
