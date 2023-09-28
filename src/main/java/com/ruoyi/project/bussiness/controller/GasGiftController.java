@@ -18,6 +18,7 @@ import com.ruoyi.project.bussiness.service.BussService;
 import com.ruoyi.project.bussiness.service.GasGiftService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
 import org.web3j.crypto.TransactionEncoder;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.http.HttpService;
@@ -63,7 +65,6 @@ public class GasGiftController {
     public static final String nonce = "419";
 
 
-
     @PostMapping("/stake")
     @ResponseBody
     @ApiOperation(value = "stake", notes = "质押")
@@ -89,7 +90,7 @@ public class GasGiftController {
         log.setUserAddr(address);
         log.setAmount("100");
         log.setType("stake");
-        log.setOptime(String.valueOf(new Date().getTime()));
+        log.setOptime(String.valueOf(new Date().getTime() / 1000));
         int i = gasOperateLogService.insertGasOperateLog(log);
         if (i > 0) {
             return AjaxResult.success("质押成功");
@@ -113,11 +114,12 @@ public class GasGiftController {
         if (!signCheck(address, sign)) {
             return AjaxResult.error("签名错误");
         }
+        // 此处没有判断是否已经质押了，因为提取就是个标志位，不需要判断是否已经质押，否则会出现链上数据和链下不一致的情况
         // 检测gas是否残留，或者如果不领取就接触质押，则gas清零
         GasOperateLog log = new GasOperateLog();
         log.setUserAddr(address);
         log.setType("withdraw");
-        log.setOptime(String.valueOf(new Date().getTime()));
+        log.setOptime(String.valueOf(new Date().getTime() / 1000));
         log.setAmount("0");
         int i = gasOperateLogService.insertGasOperateLog(log);
         if (i > 0) {
@@ -163,13 +165,13 @@ public class GasGiftController {
             lastTimeLong = Long.valueOf(lastTime);
             // 如果间隔小于1小时，则返回错误
             if (isCheck)
-                if (System.currentTimeMillis() - lastTimeLong < 3600000) {
+                if (System.currentTimeMillis() / 1000 - lastTimeLong < 3600) {
                     return null;
                 }
         } catch (Exception e) {
-            lastTimeLong = 9999999999999l;
+            lastTimeLong = 99999999999l;
         }
-        if(isCheck){
+        if (isCheck) {
             if (lastOperation.equals("withdraw")) {
                 return null;
             }
@@ -183,7 +185,7 @@ public class GasGiftController {
     }
 
 
-    @Transactional
+    //    @Transactional
     @PostMapping("/withdrawGasByAddress")
     @ResponseBody
     @ApiOperation(value = "withdrawGasByAddress", notes = "根据地址领取gas")
@@ -199,16 +201,27 @@ public class GasGiftController {
         GasOperateLog gasOperateLog1 = new GasOperateLog();
         gasOperateLog1.setRemark(orderNo);
         gasOperateLog1.setUserAddr(address);
-        gasOperateLog1.setOptime(String.valueOf(System.currentTimeMillis()));
-        gasOperateLog1.setType("withdraw");
+        gasOperateLog1.setOptime(String.valueOf(System.currentTimeMillis() / 1000));
+        gasOperateLog1.setType("gas");
         gasOperateLog1.setAmount(gasAmount);
         int i = gasOperateLogService.insertGasOperateLog(gasOperateLog1);
         if (i != 1) {
             return AjaxResult.error("提取失败");
         }
-
         // 插入提现记录表
         boolean b = insertOrder(address, gasAmount, orderNo);
+        // 启动线程来执行提现操作，防止阻塞，并返回结果
+        new Thread(() -> {
+            try {
+                Thread.sleep(100);
+                processGas(address, gasAmount, orderNo);
+            } catch (InterruptedException e) {
+//                e.printStackTrace();
+                System.out.println("提现失败:" + e.getMessage());
+            }
+        }).start();
+
+        System.out.println("提交提现请求成功");
         if (!b) {
             return AjaxResult.error("提取失败");
         } else {
@@ -281,47 +294,83 @@ public class GasGiftController {
         return AjaxResult.success(operateLogVOS);
     }
 
-
-    // 从数据库中查询近期的提现订单号，进行空投，处理时间5分钟一次。
-    public String processGas() {
-        List<GasWithdrawLog> withdrawLogs = selectNewOrder();
-        if (withdrawLogs == null || withdrawLogs.size() == 0) {
-            return "没有新的提现订单";
+    public String processGas(String address, String amount, String orderNo) {
+        System.out.println("开始提取gas");
+        GasWithdrawLog withdrawLog = new GasWithdrawLog();
+        withdrawLog.setUserAddr(address);
+        withdrawLog.setTxhash("new");
+        withdrawLog.setRemark(orderNo);
+        List<GasWithdrawLog> gasWithdrawLogs = gasWithdrawLogService.selectGasWithdrawLogList(withdrawLog);
+        if (gasWithdrawLogs.size() == 0) {
+            return "未发现订单";
         }
-        for (GasWithdrawLog withdrawLog : withdrawLogs) {
-            String address = withdrawLog.getUserAddr();
-            String amount = withdrawLog.getAmount();
-            String orderNo = withdrawLog.getRemark();
-            // 更新数据库状态为已处理
-            withdrawLog.setTxhash("processing");
-            int i = gasWithdrawLogService.updateGasWithdrawLog(withdrawLog);
-            if (i != 1) {
-                continue;
-            }
-            // 发送转账请求
-            String hash = ethTransfer(getWeb3j(), address, new BigDecimal(amount));
-            // 发送转账请求
-            if (hash == null || hash.isEmpty()) {
-                hash = "提取失败";
-            }
-            // 记录转账记录，插入gas_transfer_log表
-            GasTransferLog gasTransferLog = new GasTransferLog();
-            gasTransferLog.setUserAddr(address);
-            gasTransferLog.setAmount(amount);
-            gasTransferLog.setTxhash(hash);
-            gasTransferLog.setOptime(String.valueOf(System.currentTimeMillis()));
-            gasTransferLog.setRemark(orderNo);
-
-            int j = gasTransferLogService.insertGasTransferLog(gasTransferLog);
-            if (j != 1) {
-                gasTransferLogService.insertGasTransferLog(gasTransferLog);
-            }
-//            withdrawLog.setTxhash(hash);
-//            gasWithdrawLogService.updateGasWithdrawLog(withdrawLog);
+        GasWithdrawLog withdrawLog2 = gasWithdrawLogs.get(0);
+        withdrawLog2.setTxhash("processing");
+        int i = gasWithdrawLogService.updateGasWithdrawLog(withdrawLog2);
+        if (i != 1) {
+            return "提取过程异常";
         }
-        return "处理成功";
+        // 发送转账请求
+        String hash = gasService.ethTransfer(address, new BigDecimal(amount));
+        // 发送转账请求
+        if (hash == null || hash.isEmpty()) {
+            hash = "提取失败";
+        }
+        // 记录转账记录，插入gas_transfer_log表
+        GasTransferLog gasTransferLog = new GasTransferLog();
+        gasTransferLog.setUserAddr(address);
+        gasTransferLog.setAmount(amount);
+        gasTransferLog.setTxhash(hash);
+        gasTransferLog.setOptime(String.valueOf(System.currentTimeMillis() / 1000));
+        gasTransferLog.setRemark(orderNo);
+
+        int j = gasTransferLogService.insertGasTransferLog(gasTransferLog);
+        if (j != 1) {
+            gasTransferLogService.insertGasTransferLog(gasTransferLog);
+        }
+        return hash;
     }
 
+    // 从数据库中查询近期的提现订单号，进行空投，处理时间5分钟一次。
+//    public String processGas() {
+//        List<GasWithdrawLog> withdrawLogs = selectNewOrder();
+//        if (withdrawLogs == null || withdrawLogs.size() == 0) {
+//            return "没有新的提现订单";
+//        }
+//        for (GasWithdrawLog withdrawLog : withdrawLogs) {
+//            String address = withdrawLog.getUserAddr();
+//            String amount = withdrawLog.getAmount();
+//            String orderNo = withdrawLog.getRemark();
+//            // 更新数据库状态为已处理
+//            withdrawLog.setTxhash("processing");
+//            int i = gasWithdrawLogService.updateGasWithdrawLog(withdrawLog);
+//            if (i != 1) {
+//                continue;
+//            }
+//            // 发送转账请求
+//            String hash = ethTransfer(getWeb3j(), address, new BigDecimal(amount));
+//            // 发送转账请求
+//            if (hash == null || hash.isEmpty()) {
+//                hash = "提取失败";
+//            }
+//            // 记录转账记录，插入gas_transfer_log表
+//            GasTransferLog gasTransferLog = new GasTransferLog();
+//            gasTransferLog.setUserAddr(address);
+//            gasTransferLog.setAmount(amount);
+//            gasTransferLog.setTxhash(hash);
+//            gasTransferLog.setOptime(String.valueOf(System.currentTimeMillis() / 1000));
+//            gasTransferLog.setRemark(orderNo);
+//
+//            int j = gasTransferLogService.insertGasTransferLog(gasTransferLog);
+//            if (j != 1) {
+//                gasTransferLogService.insertGasTransferLog(gasTransferLog);
+//            }
+////            withdrawLog.setTxhash(hash);
+////            gasWithdrawLogService.updateGasWithdrawLog(withdrawLog);
+//        }
+//        return "处理成功";
+//    }
+//
 
     public boolean signCheck(String useraddr, String sign) {
         return true;
@@ -389,7 +438,7 @@ public class GasGiftController {
         GasWithdrawLog gasWithdrawLog = new GasWithdrawLog();
         gasWithdrawLog.setUserAddr(useraddr);
         gasWithdrawLog.setAmount(amount);
-        gasWithdrawLog.setOptime(String.valueOf(new Date().getTime()));
+        gasWithdrawLog.setOptime(String.valueOf(new Date().getTime() / 1000));
         gasWithdrawLog.setTxhash("new");
         gasWithdrawLog.setRemark(orderid);
         int i = gasWithdrawLogService.insertGasWithdrawLog(gasWithdrawLog);
@@ -402,57 +451,6 @@ public class GasGiftController {
         gasWithdrawLog.setTxhash("new");
         List<GasWithdrawLog> gasWithdrawLogs = gasWithdrawLogService.selectGasWithdrawLogList(gasWithdrawLog);
         return gasWithdrawLogs;
-    }
-
-
-    Web3j w3j = null;
-
-    // load web3j
-    public Web3j getWeb3j() {
-        // 采用单例模式
-        if (w3j != null) {
-            return w3j;
-        }
-        String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
-        String privateKey = config.getConfig("PRIVATE_KEY", "");
-        int chainid = config.getConfig("CHAINID", 198);
-        String contractAddress = config.getConfig("STAKE_CONTRACT", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
-        Web3j web3j = null;
-        Credentials credentials = null;
-        try {
-            web3j = Web3j.build(new HttpService(url));
-            EthBlockNumber send = web3j.ethBlockNumber().send();
-            System.out.println("send:" + send.getBlockNumber());
-            credentials = Credentials.create(privateKey);
-            System.out.println("credentials:" + credentials.getAddress());
-            w3j = web3j;
-        } catch (Exception e) {
-            System.out.println("web3j = Web3j.build(new HttpService(url));");
-            return null;
-        }
-        return web3j;
-    }
-
-    // transfer value to address
-    public String ethTransfer(Web3j web3j, String fromAddr, BigDecimal amount) {
-        String privateKey = config.getConfig("PRIVATE_KEY", "");
-        if (!privateKey.startsWith("0x")) {
-            privateKey = "0x" + privateKey;
-        }
-        RawTransaction rawTransaction = RawTransaction.createEtherTransaction(BigInteger.valueOf(1), BigInteger.valueOf(1_000_000_000L), BigInteger.valueOf(210000), fromAddr, amount.toBigInteger());
-        Credentials credentials = Credentials.create(privateKey);
-        byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
-        String hexValue = Numeric.toHexString(signedMessage);
-        try {
-            EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
-            String transactionHash = ethSendTransaction.getTransactionHash();
-            System.out.println("transactionHash:" + transactionHash);
-            return transactionHash;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
     }
 
 
