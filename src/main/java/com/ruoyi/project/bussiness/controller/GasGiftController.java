@@ -14,38 +14,27 @@ import com.ruoyi.project.bussiness.entity.GasParams;
 import com.ruoyi.project.bussiness.entity.GasParamsLite;
 import com.ruoyi.project.bussiness.entity.OperateLogVO;
 import com.ruoyi.project.bussiness.entity.TransferLogVO;
-import com.ruoyi.project.bussiness.service.BussService;
 import com.ruoyi.project.bussiness.service.GasGiftService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.web3j.crypto.Credentials;
-import org.web3j.crypto.RawTransaction;
-import org.web3j.crypto.TransactionEncoder;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.response.EthBlockNumber;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.utils.Numeric;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/GasGift")
 @ApiOperation(value = "GasGift", notes = "个人领gas")
 @Api(value = "GasGift", tags = {"GasGift"})
-//@DataSource(value = DataSourceType.MASTER)
+@DataSource(value = DataSourceType.MASTER)
 public class GasGiftController {
     @Autowired
     GasGiftService gasService;
@@ -80,23 +69,44 @@ public class GasGiftController {
         if (!signCheck(address, sign)) {
             return AjaxResult.error("签名错误");
         }
-        // 校验hash是否存在
-        // 从链上读取hash，查看from和to是否争取，交易是否成功，method是否是质押方法
-        if (!hashCheck(address, hash)) {
-            return AjaxResult.error("hash有问题");
-        }
-        // 如果成功，则记录质押记录，插入gas_operate_log表
-        GasOperateLog log = new GasOperateLog();
-        log.setUserAddr(address);
-        log.setAmount("100");
-        log.setType("stake");
-        log.setOptime(String.valueOf(new Date().getTime() / 1000));
-        int i = gasOperateLogService.insertGasOperateLog(log);
-        if (i > 0) {
+
+        // 如果他的状态是stake或gas，则直接返回
+        GasOperateLog last = new GasOperateLog();
+        last.setUserAddr(address);
+        GasOperateLog log1 = gasOperateLogService.selectGasOperateLast(last);
+        if(log1 != null && (log1.getType().equals("stake") || log1.getType().equals("gas"))){
             return AjaxResult.success("质押成功");
-        } else {
-            return AjaxResult.error("质押失败");
         }
+
+
+        // 校验hash是否存在
+        // 开启新线程，调用getStakeUser方法，获取链上数据，如果成功，则返回true，否则返回false。传递参数有：address、hash，如果成功则插入gas_operate_log表
+        new Thread(() -> {
+            // 等待5秒，等待链上数据确认
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                boolean stakeUser = gasService.getStakeUser(address);
+                if (stakeUser) {
+                    // 如果成功，则记录质押记录，插入gas_operate_log表
+                    GasOperateLog log = new GasOperateLog();
+                    log.setUserAddr(address);
+                    log.setAmount("100");
+                    log.setType("stake");
+                    log.setOptime(String.valueOf(new Date().getTime() / 1000));
+                    log.setRemark(hash);
+                    gasOperateLogService.insertGasOperateLog(log);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        return AjaxResult.success("质押成功，等待链上数据确认");
     }
 
 
@@ -185,7 +195,6 @@ public class GasGiftController {
     }
 
 
-    //    @Transactional
     @PostMapping("/withdrawGasByAddress")
     @ResponseBody
     @ApiOperation(value = "withdrawGasByAddress", notes = "根据地址领取gas")
@@ -311,7 +320,12 @@ public class GasGiftController {
             return "提取过程异常";
         }
         // 查询质押合约，看这人是否还在质押，若不在质押，则不允许提取
-
+        boolean b = gasService.getStakeUser(address);
+        if (!b) {
+            withdrawLog2.setTxhash("失败，未质押");
+            gasWithdrawLogService.updateGasWithdrawLog(withdrawLog2);
+            return "未质押";
+        }
 
         // 发送转账请求
         String hash = gasService.ethTransfer(address, new BigDecimal(amount));
@@ -388,10 +402,10 @@ public class GasGiftController {
 //        }
     }
 
-    public boolean hashCheck(String useraddr, String hash) {
-        String contractAddr = config.getConfig("STAKE_CONTRACT", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
-        String methodId = config.getConfig("STAKE_METHOD", "0x7d8e0c9f");
-        return true;
+//    public boolean hashCheck(String useraddr, String hash) {
+//        String contractAddr = config.getConfig("STAKE_CONTRACT", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
+//        String methodId = config.getConfig("STAKE_METHOD", "0x7d8e0c9f");
+//        return true;
 //        try {
 //            Web3j web3j = getWeb3j();
 //            EthTransaction ethTransaction = web3j.ethGetTransactionByHash(hash).send();
@@ -420,7 +434,7 @@ public class GasGiftController {
 //            System.out.println(e.getMessage());
 //            return false;
 //        }
-    }
+//    }
 
     public boolean addressCheck(String address) {
         if (address == null || address.isEmpty()) {
@@ -447,14 +461,5 @@ public class GasGiftController {
         int i = gasWithdrawLogService.insertGasWithdrawLog(gasWithdrawLog);
         return i > 0;
     }
-
-    // 查询订单txhash等于new的订单
-    public List<GasWithdrawLog> selectNewOrder() {
-        GasWithdrawLog gasWithdrawLog = new GasWithdrawLog();
-        gasWithdrawLog.setTxhash("new");
-        List<GasWithdrawLog> gasWithdrawLogs = gasWithdrawLogService.selectGasWithdrawLogList(gasWithdrawLog);
-        return gasWithdrawLogs;
-    }
-
 
 }

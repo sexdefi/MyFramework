@@ -3,19 +3,14 @@ package com.ruoyi.project.bussiness.service;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import com.ruoyi.project.bussiness.common.BusConfigService;
-import lombok.Synchronized;
+import com.ruoyi.project.bussiness.contracts.StakeBrc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.web3j.crypto.Credentials;
-import org.web3j.crypto.RawTransaction;
-import org.web3j.crypto.TransactionEncoder;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.response.EthBlockNumber;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.RawTransactionManager;
@@ -24,12 +19,11 @@ import org.web3j.tx.Transfer;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 import org.web3j.utils.Convert;
-import org.web3j.utils.Numeric;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @DataSource(value = DataSourceType.SLAVE)
@@ -111,5 +105,34 @@ public class GasGiftService {
 
     }
 
+    // load contract StakeBrc
+    private StakeBrc loadContract(Web3j web3j, Credentials credentials) {
+        String stakeAddr = config.getConfig("STAKE_CONTRACT", "");
+        ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(210000), BigInteger.valueOf(1000000));
+        StakeBrc stakeBrc = StakeBrc.load(stakeAddr, web3j, credentials, contractGasProvider);
+        return stakeBrc;
+    }
+
+    // 调用stake的getStakeUser方法
+    public boolean getStakeUser(String address) {
+        String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
+        Web3j web3j = getWeb3j();
+        Credentials credentials = null;
+        try {
+            if(web3j == null){
+                web3j = Web3j.build(new HttpService(url));
+            }
+            String privateKey = config.getConfig("PRIVATE_KEY", "");
+            credentials = Credentials.create(privateKey);
+            StakeBrc stakeBrc = loadContract(web3j, credentials);
+            RemoteCall<BigInteger> stakeUser = stakeBrc.getStakeUser(address);
+            BigInteger send = stakeUser.send();
+            System.out.println("stakeUser:" + send);
+            return send.compareTo(BigInteger.ZERO) > 0;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
 
 }
