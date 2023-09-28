@@ -310,6 +310,9 @@ public class GasGiftController {
         if (i != 1) {
             return "提取过程异常";
         }
+        // 查询质押合约，看这人是否还在质押，若不在质押，则不允许提取
+
+
         // 发送转账请求
         String hash = gasService.ethTransfer(address, new BigDecimal(amount));
         // 发送转账请求

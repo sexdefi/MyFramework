@@ -62,8 +62,6 @@ public class GasGiftService {
 
     }
 
-
-
     // load web3j
     public Web3j getWeb3j() {
         String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
