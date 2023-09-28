@@ -3,6 +3,7 @@ package com.ruoyi.project.bussiness.controller;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import com.ruoyi.framework.web.domain.AjaxResult;
+import com.ruoyi.project.Utils.SignValiditor;
 import com.ruoyi.project.bus.operate.domain.GasOperateLog;
 import com.ruoyi.project.bus.operate.service.IGasOperateLogService;
 import com.ruoyi.project.bus.order.domain.GasWithdrawLog;
@@ -390,16 +391,16 @@ public class GasGiftController {
 //
 
     public boolean signCheck(String useraddr, String sign) {
-        return true;
-//        try {
-//            String message = useraddr + nonce;
-//
-//            boolean validate = SignValiditor.validate(sign, message, useraddr.toLowerCase());
-//            return validate;
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//            return false;
-//        }
+//        return true;
+        try {
+            String message = useraddr + nonce;
+
+            boolean validate = SignValiditor.validate(sign, message, useraddr.toLowerCase());
+            return validate;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
     }
 
 //    public boolean hashCheck(String useraddr, String hash) {

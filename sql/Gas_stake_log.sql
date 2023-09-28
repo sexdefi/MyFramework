@@ -23,81 +23,115 @@ CREATE TABLE `gas_transfer_log`
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 1;
 
-CREATE TABLE `gas_withdraw_log` (
-                                    `id` int(11) NOT NULL AUTO_INCREMENT,
-                                    `user_addr` varchar(255) DEFAULT NULL COMMENT '用户地址',
-                                    `amount` varchar(255) DEFAULT NULL COMMENT '提现金额',
-                                    `txhash` varchar(255) DEFAULT NULL COMMENT '交易哈希',
-                                    `optime` varchar(255) DEFAULT NULL COMMENT '提现时间',
-                                    `remark` varchar(255) DEFAULT NULL COMMENT '订单号',
-                                    PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='提现记录表';
+CREATE TABLE `gas_withdraw_log`
+(
+    `id`        int(11) NOT NULL AUTO_INCREMENT,
+    `user_addr` varchar(255) DEFAULT NULL COMMENT '用户地址',
+    `amount`    varchar(255) DEFAULT NULL COMMENT '提现金额',
+    `txhash`    varchar(255) DEFAULT NULL COMMENT '交易哈希',
+    `optime`    varchar(255) DEFAULT NULL COMMENT '提现时间',
+    `remark`    varchar(255) DEFAULT NULL COMMENT '订单号',
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8mb4 COMMENT ='提现记录表';
 
 -- 菜单 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表', '1', '1', '/gas/operate', 'C', '0', 'gas:operate:view', '#', 'admin', sysdate(), '', null, 'gas领取操作记录表菜单');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表', '1', '1', '/gas/operate', 'C', '0', 'gas:operate:view', '#', 'admin', sysdate(), '', null,
+        'gas领取操作记录表菜单');
 
 -- 按钮父菜单ID
 SELECT @parentId := LAST_INSERT_ID();
 
 -- 按钮 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表查询', @parentId, '1',  '#',  'F', '0', 'gas:operate:list',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表查询', @parentId, '1', '#', 'F', '0', 'gas:operate:list', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表新增', @parentId, '2',  '#',  'F', '0', 'gas:operate:add',          '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表新增', @parentId, '2', '#', 'F', '0', 'gas:operate:add', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表修改', @parentId, '3',  '#',  'F', '0', 'gas:operate:edit',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表修改', @parentId, '3', '#', 'F', '0', 'gas:operate:edit', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表删除', @parentId, '4',  '#',  'F', '0', 'gas:operate:remove',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表删除', @parentId, '4', '#', 'F', '0', 'gas:operate:remove', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('gas领取操作记录表导出', @parentId, '5',  '#',  'F', '0', 'gas:operate:export',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('gas领取操作记录表导出', @parentId, '5', '#', 'F', '0', 'gas:operate:export', '#', 'admin', sysdate(), '', null,
+        '');
 
 -- 菜单 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录', '1', '1', '/gas/transferLog', 'C', '0', 'gas:transferLog:view', '#', 'admin', sysdate(), '', null, 'Gas领取空投记录菜单');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录', '1', '1', '/gas/transferLog', 'C', '0', 'gas:transferLog:view', '#', 'admin', sysdate(), '',
+        null, 'Gas领取空投记录菜单');
 
 -- 按钮父菜单ID
 SELECT @parentId := LAST_INSERT_ID();
 
 -- 按钮 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录查询', @parentId, '1',  '#',  'F', '0', 'gas:transferLog:list',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录查询', @parentId, '1', '#', 'F', '0', 'gas:transferLog:list', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录新增', @parentId, '2',  '#',  'F', '0', 'gas:transferLog:add',          '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录新增', @parentId, '2', '#', 'F', '0', 'gas:transferLog:add', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录修改', @parentId, '3',  '#',  'F', '0', 'gas:transferLog:edit',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录修改', @parentId, '3', '#', 'F', '0', 'gas:transferLog:edit', '#', 'admin', sysdate(), '', null,
+        '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录删除', @parentId, '4',  '#',  'F', '0', 'gas:transferLog:remove',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录删除', @parentId, '4', '#', 'F', '0', 'gas:transferLog:remove', '#', 'admin', sysdate(), '',
+        null, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('Gas领取空投记录导出', @parentId, '5',  '#',  'F', '0', 'gas:transferLog:export',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('Gas领取空投记录导出', @parentId, '5', '#', 'F', '0', 'gas:transferLog:export', '#', 'admin', sysdate(), '',
+        null, '');
 
 -- 菜单 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录', '1', '1', '/gas/order', 'C', '0', 'gas:order:view', '#', 'admin', sysdate(), '', null, '提现记录菜单');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录', '1', '1', '/gas/order', 'C', '0', 'gas:order:view', '#', 'admin', sysdate(), '', null,
+        '提现记录菜单');
 
 -- 按钮父菜单ID
 SELECT @parentId := LAST_INSERT_ID();
 
 -- 按钮 SQL
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录查询', @parentId, '1',  '#',  'F', '0', 'gas:order:list',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录查询', @parentId, '1', '#', 'F', '0', 'gas:order:list', '#', 'admin', sysdate(), '', null, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录新增', @parentId, '2',  '#',  'F', '0', 'gas:order:add',          '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录新增', @parentId, '2', '#', 'F', '0', 'gas:order:add', '#', 'admin', sysdate(), '', null, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录修改', @parentId, '3',  '#',  'F', '0', 'gas:order:edit',         '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录修改', @parentId, '3', '#', 'F', '0', 'gas:order:edit', '#', 'admin', sysdate(), '', null, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录删除', @parentId, '4',  '#',  'F', '0', 'gas:order:remove',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录删除', @parentId, '4', '#', 'F', '0', 'gas:order:remove', '#', 'admin', sysdate(), '', null, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('提现记录导出', @parentId, '5',  '#',  'F', '0', 'gas:order:export',       '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu (menu_name, parent_id, order_num, url, menu_type, visible, perms, icon, create_by, create_time,
+                      update_by, update_time, remark)
+values ('提现记录导出', @parentId, '5', '#', 'F', '0', 'gas:order:export', '#', 'admin', sysdate(), '', null, '');
