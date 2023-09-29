@@ -144,7 +144,8 @@ public class GasGiftController {
     @ResponseBody
     @ApiOperation(value = "getGasAmount", notes = "获取待领取gas余额")
     public AjaxResult getGasAmount(@RequestBody GasParamsLite params) {
-        return AjaxResult.success(_getGasAmount(params, false));
+        String gasAmount = _getGasAmount(params, false);
+        return AjaxResult.success("获取成功", gasAmount);
     }
 
 
