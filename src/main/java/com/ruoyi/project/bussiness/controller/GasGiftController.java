@@ -1,5 +1,6 @@
 package com.ruoyi.project.bussiness.controller;
 
+import com.ruoyi.common.utils.CacheUtils;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import com.ruoyi.framework.web.domain.AjaxResult;
@@ -125,6 +126,8 @@ public class GasGiftController {
         if (!signCheck(address, sign)) {
             return AjaxResult.error("签名错误");
         }
+        // 设置缓存为0
+        addBalanceCache(address, "0");
         // 此处没有判断是否已经质押了，因为提取就是个标志位，不需要判断是否已经质押，否则会出现链上数据和链下不一致的情况
         // 检测gas是否残留，或者如果不领取就接触质押，则gas清零
         GasOperateLog log = new GasOperateLog();
@@ -144,7 +147,13 @@ public class GasGiftController {
     @ResponseBody
     @ApiOperation(value = "getGasAmount", notes = "获取待领取gas余额")
     public AjaxResult getGasAmount(@RequestBody GasParamsLite params) {
+        String balanceCache = getBalanceCache(params.getAddress());
+        if(balanceCache != null){
+            return AjaxResult.success("获取成功", balanceCache);
+        }
+
         String gasAmount = _getGasAmount(params, false);
+        addBalanceCache(params.getAddress(), gasAmount);
         return AjaxResult.success("获取成功", gasAmount);
     }
 
@@ -206,7 +215,8 @@ public class GasGiftController {
         if (gasAmount == null || gasAmount.isEmpty() || gasAmount.equals("0")) {
             return AjaxResult.error("可提取gas余额不足，或者提取间隔小于1小时");
         }
-
+        // 设置缓存为0
+        addBalanceCache(address, "0");
         // 生成订单号，并将提现记录插入提现表
         String orderNo = UUID.randomUUID().toString().replaceAll("-", "");
         GasOperateLog gasOperateLog1 = new GasOperateLog();
@@ -462,6 +472,27 @@ public class GasGiftController {
         gasWithdrawLog.setRemark(orderid);
         int i = gasWithdrawLogService.insertGasWithdrawLog(gasWithdrawLog);
         return i > 0;
+    }
+
+
+    //TODO 缓存用户的余额
+    //如果改造成按小时空投，就改下snapshot数据的，以及除非那块儿，有一些硬编码
+    // 添加缓存
+    public void addBalanceCache(String address, Object value) {
+        CacheUtils.put("balance",address, value);
+    }
+
+    public String getBalanceCache(String address){
+        try {
+            Object o = CacheUtils.get("balance", address);
+            if (o == null) {
+                return null;
+            } else {
+                return (String) o;
+            }
+        } catch (Exception e) {
+            return "0";
+        }
     }
 
 }
