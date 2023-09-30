@@ -309,6 +309,7 @@ public class GasGiftController {
                 operateLogVO.setOptype("提取BRC");
             } else {
 //                operateLogVO.setOptype("领取GAS");
+                continue;
             }
             operateLogVOS.add(operateLogVO);
         }

@@ -32,11 +32,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectGasOperateLogVo"/>
         <where>
             <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
-            <if test="type != null  and type != ''"> and type = #{type}</if>
-            <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
-            <if test="optime != null  and optime != ''"> and optime = #{optime}</if>
+#            // 筛选type = withdraw 或者 type = stake的记录
+            and (type = 'withdraw' or type = 'stake')
         </where>
-        order by id desc limit 50
+        order by id asc limit 50
     </select>
 
     <select id="selectGasOperateLast" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
