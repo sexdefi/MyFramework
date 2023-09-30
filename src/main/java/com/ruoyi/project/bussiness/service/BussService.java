@@ -922,6 +922,107 @@ public class BussService {
     }
 
 
+    public String airdropForList(String airdropList) {
+        // airdropList按照回车或空格分割，之后，每个地址和金额按照逗号分割
+        String[] split = airdropList.split(" ");
+        if(split.length == 0){
+            return "空投列表为空";
+        }
+        List<String> from_addr_list = new ArrayList<>();
+        List<BigDecimal> gas_list = new ArrayList<>();
+        for (int i = 0; i < split.length; i++) {
+            String[] split1 = split[i].split(",");
+            if(split1.length != 2){
+                return "空投列表格式不正确";
+            }
+            from_addr_list.add(split1[0]);
+            gas_list.add(new BigDecimal(split1[1]));
+        }
+
+        String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
+        String privateKey = config.getConfig("PRIVATE_KEY", "");
+        int chainid = config.getConfig("CHAINID", 198);
+        String contractAddress = config.getConfig("AIRDROP_ADDRESS", "0xbf1517A5C733ad7ed59AF36A281F37dB8b8210bA");
+        Web3j web3j = null;
+        Credentials credentials = null;
+        AirdropContract airdrop = null;
+        try {
+            web3j = Web3j.build(new HttpService(url));
+            EthBlockNumber send = web3j.ethBlockNumber().send();
+            System.out.println("send:" + send.getBlockNumber());
+            credentials = Credentials.create(privateKey);
+            System.out.println("credentials:" + credentials.getAddress());
+            airdrop = _loadAirdrop(web3j, chainid, privateKey, contractAddress);
+            System.out.println("airdrop:" + airdrop.getContractAddress());
+        } catch (Exception e) {
+            System.out.println("web3j = Web3j.build(new HttpService(url));");
+            return "Web3未空或者私钥不正确";
+        }
+
+        if (from_addr_list.size() != gas_list.size()) {
+            System.out.println("from_addr_list.size() != gas_list.size()");
+            return "空投列表异常，数量不匹配";
+        }
+        if (from_addr_list.size() == 0) {
+            System.out.println("from_addr_list.size() == 0");
+            return "空投列表为空";
+        }
+        if (web3j == null || credentials == null) {
+            System.out.println("web3j == null || credentials == null");
+            return "Web3j或者私钥不正确";
+        }
+        // 将gas累加，查询余额，如果余额小于gas累加，就不空投，返回false
+        BigDecimal totalGas = new BigDecimal(0);
+        for (BigDecimal gas : gas_list) {
+            totalGas = totalGas.add(gas);
+        }
+        try {
+            BigInteger balance = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send().getBalance();
+            if (balance.compareTo(totalGas.toBigInteger()) < 0) {
+                System.out.println("账户余额不足，无法空投");
+                return "账户余额不足，无法空投";
+            }
+        } catch (Exception e) {
+            System.out.println("查询余额时候，异常！");
+            return "查询余额时候，异常！";
+        }
+
+        // 定义一个计数器，记录空投成功的数量
+        // 将gas_list里面的数据类型从BigDecimal转换成BigInteger
+        BigInteger totalGasBig = BigInteger.ZERO;
+        List<BigInteger> gas_list_big = new ArrayList<>();
+        for (BigDecimal gas : gas_list) {
+            gas_list_big.add(gas.toBigInteger());
+            totalGasBig = totalGasBig.add(gas.toBigInteger());
+        }
+        // 多加一点gas防止四舍五入
+        totalGasBig = totalGasBig.add(new BigInteger("100000000000"));
+
+        String hash = "";
+        try {
+            int _nonce = web3j.ethGetTransactionCount(credentials.getAddress(), DefaultBlockParameterName.PENDING).send().getTransactionCount().intValue();
+            String _gasPrice = "1";
+            int _gasLimit = 6000000;
+            String _to = contractAddress;
+            String _value = totalGasBig.toString();
+            String _data = airdrop.multiTransfer_OST(from_addr_list, gas_list_big).encodeFunctionCall().substring(2);
+            RawTransaction rawTransaction = newRawTx(_nonce, _gasPrice, _gasLimit, _to, _value, _data);
+            byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, chainid, credentials);
+            String hexValue = Numeric.toHexString(signedMessage);
+            EthSendTransaction ethSendTransaction = web3j.ethSendRawTransaction(hexValue).send();
+            if (ethSendTransaction.hasError()) {
+                System.out.println("空投失败");
+                return "空投失败";
+            }
+            hash = ethSendTransaction.getTransactionHash();
+            System.out.println("hash:" + hash);
+            return "success," + hash;
+        } catch (Exception ex) {
+            System.out.println("ex:" + ex);
+            return "空投失败";
+        }
+
+    }
 
 
     // 新建一个黑名单表，用来存储黑名单地址。字段包括：id，地址，备注，状态（0：正常，1：删除）

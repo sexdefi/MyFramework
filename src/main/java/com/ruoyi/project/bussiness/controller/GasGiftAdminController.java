@@ -15,6 +15,7 @@ import com.ruoyi.project.bussiness.entity.GasParams;
 import com.ruoyi.project.bussiness.entity.GasParamsLite;
 import com.ruoyi.project.bussiness.entity.OperateLogVO;
 import com.ruoyi.project.bussiness.entity.TransferLogVO;
+import com.ruoyi.project.bussiness.service.BussService;
 import com.ruoyi.project.bussiness.service.GasGiftService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -51,6 +52,9 @@ public class GasGiftAdminController {
 
     @Autowired
     IGasWithdrawLogService gasWithdrawLogService;
+
+    @Autowired
+    BussService bussService;
 
 
     @PostMapping("/stake")
@@ -99,6 +103,29 @@ public class GasGiftAdminController {
         } else {
             return AjaxResult.error("手动解除质押失败");
         }
+    }
+
+    @PostMapping("/transfer")
+    @ResponseBody
+    @ApiOperation(value = "transfer", notes = "转账")
+    public AjaxResult transfer(String address, String amount){
+        BigDecimal bigDecimal = new BigDecimal(amount);
+        String s = gasService.ethTransfer(address, bigDecimal);
+        if(s == null){
+            return AjaxResult.error("转账失败");
+        }
+        return AjaxResult.success("转账成功");
+    }
+
+    @PostMapping("/airdrop")
+    @ResponseBody
+    @ApiOperation(value = "airdrop", notes = "空投")
+    public AjaxResult airdrop(String airdroplist){
+        String s = bussService.airdropForList(airdroplist);
+        if(s == null){
+            return AjaxResult.error("空投失败");
+        }
+        return AjaxResult.success(s);
     }
 
 

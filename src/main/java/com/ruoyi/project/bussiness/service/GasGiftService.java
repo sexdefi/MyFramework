@@ -59,7 +59,7 @@ public class GasGiftService {
     // load web3j
     public Web3j getWeb3j() {
         String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
-        String privateKey = config.getConfig("PRIVATE_KEY", "");
+        String privateKey = config.getConfig("PRIVATE_KEY_TEST", "");
         Web3j web3j = null;
         Credentials credentials = null;
         try {
@@ -76,11 +76,11 @@ public class GasGiftService {
     }
 
     // transfer value to address
-//    @Synchronized
-    public String ethTransfer(String fromAddr, BigDecimal amount) {
-        String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
-        String privateKey = config.getConfig("PRIVATE_KEY", "0x3a42de4ce6a82ad59012b3629f860a5781ff64bd99a992398f138dece323f01d");
-        int chainid = config.getConfig("CHAINID", 8899);
+//
+    public synchronized String ethTransfer(String fromAddr, BigDecimal amount) {
+        String url = config.getConfig("RPC", "");
+        String privateKey = config.getConfig("PRIVATE_KEY_TEST", "");
+        int chainid = config.getConfig("CHAINID", 198);
         Web3j web3j = getWeb3j();
         Credentials credentials = null;
         try {
@@ -90,7 +90,11 @@ public class GasGiftService {
             credentials = Credentials.create(privateKey);
             TransactionManager transactionManager = new RawTransactionManager(web3j, credentials, chainid); //EIP-155
             Transfer transfer = new Transfer(web3j, transactionManager);
-            RemoteCall<TransactionReceipt> transactionReceiptRemoteCall = transfer.sendFunds(fromAddr, amount, Convert.Unit.WEI, BigInteger.valueOf(210000), BigInteger.valueOf(1000000));
+
+            BigInteger gasPrice = BigInteger.valueOf(1100000000);
+            BigInteger gasLimit = BigInteger.valueOf(210000);
+
+            RemoteCall<TransactionReceipt> transactionReceiptRemoteCall = transfer.sendFunds(fromAddr, amount, Convert.Unit.WEI, gasPrice, gasLimit);
             TransactionReceipt transactionReceipt = transactionReceiptRemoteCall.send();
             if (transactionReceipt == null) {
                 return "false";
@@ -100,7 +104,7 @@ public class GasGiftService {
             return transactionReceipt.getTransactionHash();
         } catch (Exception e) {
             System.out.println(e.getMessage());
-            return "Web3未空或者私钥不正确";
+            return e.getMessage();
         }
 
     }
@@ -122,7 +126,7 @@ public class GasGiftService {
             if(web3j == null){
                 web3j = Web3j.build(new HttpService(url));
             }
-            String privateKey = config.getConfig("PRIVATE_KEY", "");
+            String privateKey = config.getConfig("PRIVATE_KEY_TEST", "");
             credentials = Credentials.create(privateKey);
             StakeBrc stakeBrc = loadContract(web3j, credentials);
             RemoteCall<BigInteger> stakeUser = stakeBrc.getStakeUser(address);

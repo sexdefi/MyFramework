@@ -308,7 +308,7 @@ public class GasGiftController {
             } else if (type.equals("withdraw")) {
                 operateLogVO.setOptype("提取BRC");
             } else {
-                operateLogVO.setOptype("领取GAS");
+//                operateLogVO.setOptype("领取GAS");
             }
             operateLogVOS.add(operateLogVO);
         }
