@@ -134,7 +134,7 @@ public class GasGiftController {
         log.setUserAddr(address);
         log.setType("withdraw");
         log.setOptime(String.valueOf(new Date().getTime() / 1000));
-        log.setAmount("0");
+        log.setAmount("-100");
         int i = gasOperateLogService.insertGasOperateLog(log);
         if (i > 0) {
             return AjaxResult.success("解除质押成功");
