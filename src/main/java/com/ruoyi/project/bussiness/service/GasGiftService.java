@@ -40,20 +40,40 @@ public class GasGiftService {
 
     @DataSource(value = DataSourceType.SLAVE)
     public String getGasAmount(String address, Long lastTimeLong) {
-        // 查询所有的交易记录，统计gas
-        String sql = String.format(sumGasSQL, address, lastTimeLong);
-        System.out.println(sql);
-        List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql);
-        if(maps == null || maps.size() == 0){
+        try {
+            // 如果lastTimeLong >= 当前时间，返回0
+            if (lastTimeLong >= System.currentTimeMillis() / 1000) {
+                return "0";
+            }
+
+            // 计算开启时间，如果开启时间大于当前时间，返回0
+            long openTime = config.getConfig("GAS_GIFT_OPEN_TIME", 1696327200l);
+            if (openTime > System.currentTimeMillis() / 1000) {
+                return "0";
+            }
+            // 如果lastTimeLong小于开启时间，则lastTimeLong = 开启时间
+            if (lastTimeLong < openTime) {
+                lastTimeLong = openTime;
+            }
+
+
+            // 查询所有的交易记录，统计gas
+            String sql = String.format(sumGasSQL, address, lastTimeLong);
+            System.out.println(sql);
+            List<Map<String, Object>> maps = jdbcTemplate.queryForList(sql);
+            if (maps == null || maps.size() == 0) {
+                return "0";
+            }
+            Double gas = (Double) maps.get(0).get("gas");
+            BigDecimal bigDecimal = new BigDecimal(gas);
+
+            // 返回非科学计数法的值
+            String plainString = bigDecimal.toPlainString();
+            return plainString;
+        }catch (Exception e){
+            System.out.println(e.getMessage());
             return "0";
         }
-        Double gas = (Double) maps.get(0).get("gas");
-        BigDecimal bigDecimal = new BigDecimal(gas);
-
-        // 返回非科学计数法的值
-        String plainString = bigDecimal.toPlainString();
-        return plainString;
-
     }
 
     // load web3j

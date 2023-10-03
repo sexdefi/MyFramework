@@ -76,10 +76,10 @@ public class GasGiftController {
         GasOperateLog last = new GasOperateLog();
         last.setUserAddr(address);
         GasOperateLog log1 = gasOperateLogService.selectGasOperateLast(last);
-        if(log1 != null && (log1.getType().equals("stake") || log1.getType().equals("gas"))){
+        if (log1 != null && (log1.getType().equals("stake") || log1.getType().equals("gas"))) {
             return AjaxResult.success("质押成功");
         }
-
+        String stakeAmount = config.getConfig("stakeAmount","50");
 
         // 校验hash是否存在
         // 开启新线程，调用getStakeUser方法，获取链上数据，如果成功，则返回true，否则返回false。传递参数有：address、hash，如果成功则插入gas_operate_log表
@@ -97,7 +97,7 @@ public class GasGiftController {
                     // 如果成功，则记录质押记录，插入gas_operate_log表
                     GasOperateLog log = new GasOperateLog();
                     log.setUserAddr(address);
-                    log.setAmount("100");
+                    log.setAmount(stakeAmount);
                     log.setType("stake");
                     log.setOptime(String.valueOf(new Date().getTime() / 1000));
                     log.setRemark(hash);
@@ -126,6 +126,7 @@ public class GasGiftController {
         if (!signCheck(address, sign)) {
             return AjaxResult.error("签名错误");
         }
+        String stakeAmount = config.getConfig("stakeAmount","50");
         // 设置缓存为0
         addBalanceCache(address, "0");
         // 此处没有判断是否已经质押了，因为提取就是个标志位，不需要判断是否已经质押，否则会出现链上数据和链下不一致的情况
@@ -134,7 +135,7 @@ public class GasGiftController {
         log.setUserAddr(address);
         log.setType("withdraw");
         log.setOptime(String.valueOf(new Date().getTime() / 1000));
-        log.setAmount("-100");
+        log.setAmount(stakeAmount);
         int i = gasOperateLogService.insertGasOperateLog(log);
         if (i > 0) {
             return AjaxResult.success("解除质押成功");
@@ -148,7 +149,7 @@ public class GasGiftController {
     @ApiOperation(value = "getGasAmount", notes = "获取待领取gas余额")
     public AjaxResult getGasAmount(@RequestBody GasParamsLite params) {
         String balanceCache = getBalanceCache(params.getAddress());
-        if(balanceCache != null){
+        if (balanceCache != null) {
             return AjaxResult.success("获取成功", balanceCache);
         }
 
@@ -166,6 +167,11 @@ public class GasGiftController {
             return "0";
         }
         if (!addressCheck(address)) {
+            return "0";
+        }
+        // 开启时间，如果当前时间小于开启时间，则返回0
+        long openTime = config.getConfig("GAS_GIFT_OPEN_TIME", 1696327200l);
+        if (new Date().getTime() / 1000 < openTime) {
             return "0";
         }
 
@@ -211,6 +217,7 @@ public class GasGiftController {
     @ApiOperation(value = "withdrawGasByAddress", notes = "根据地址领取gas")
     public AjaxResult withdrawGasByAddress(@RequestBody GasParamsLite params) {
         String address = params.getAddress();
+        // 移除缓存
         String gasAmount = _getGasAmount(params, true);
         if (gasAmount == null || gasAmount.isEmpty() || gasAmount.equals("0")) {
             return AjaxResult.error("可提取gas余额不足，或者提取间隔小于1小时");
@@ -480,10 +487,12 @@ public class GasGiftController {
     //如果改造成按小时空投，就改下snapshot数据的，以及除非那块儿，有一些硬编码
     // 添加缓存
     public void addBalanceCache(String address, Object value) {
-        CacheUtils.put("balance",address, value);
+        CacheUtils.put("balance", address, value);
     }
 
-    public String getBalanceCache(String address){
+
+
+    public String getBalanceCache(String address) {
         try {
             Object o = CacheUtils.get("balance", address);
             if (o == null) {
