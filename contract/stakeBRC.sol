@@ -6,15 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract StakeReturnGas is ERC20,Ownable {
+contract StakeReturnGas is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
     string _name = "GAS Ticket";
     string _symbol = "GAS_Ticket";
 
-    constructor() ERC20(_name,_symbol){}
+    constructor() ERC20(_name, _symbol){}
     address public _BRC = 0xF89c8c3cf0D39745f9F691fc2839572dDc00e02f;
-    uint256 public quota = 100 ether;
+    uint256 public quota = 50 ether;
     bool public paused = true;
     mapping(address => User) public users;
     address[] userArray;
@@ -42,7 +42,7 @@ contract StakeReturnGas is ERC20,Ownable {
         u.Wallet = msg.sender;
         u.StakeAmount = quota;
         u.ExtractTime = 0;
-        if(users[msg.sender].Wallet == address(0)){
+        if (users[msg.sender].Wallet == address(0)) {
             userArray.push(msg.sender);
         }
         users[msg.sender] = u;
@@ -51,14 +51,14 @@ contract StakeReturnGas is ERC20,Ownable {
             address(this),
             quota
         );
-        _mint(msg.sender,quota / 100);
+        _mint(msg.sender, 1 ether);
         return true;
     }
 
     function withdrawToken() external callerIsUser returns (bool){
         require(users[msg.sender].StakeAmount > 0, "sender stake amount is 0");
         require(balanceOf(msg.sender) > 0, "not enough gas ticket");
-        _burn(msg.sender,balanceOf(msg.sender));
+        _burn(msg.sender, balanceOf(msg.sender));
 
         IERC20(_BRC).safeTransfer(
             msg.sender,
@@ -82,17 +82,17 @@ contract StakeReturnGas is ERC20,Ownable {
         paused = _paused;
     }
 
-    function getUserCount() external view returns(uint256){
+    function getUserCount() external view returns (uint256){
         return userArray.length;
     }
 
-    function getStakeListPage(uint256 pageNo,uint256 pageSize) external view returns(User[] memory){
+    function getStakeListPage(uint256 pageNo, uint256 pageSize) external view returns (User[] memory){
         User[] memory _users = new User[](pageSize);
         uint256 total = userArray.length;
         uint256 start = pageNo * pageSize;
         uint256 end = start + pageSize - 1;
-        for ( uint256 i = start; i < end; i ++ ) {
-            if(i < total) {
+        for (uint256 i = start; i < end; i ++) {
+            if (i < total) {
                 User memory u = users[userArray[i]];
                 _users[i - start] = u;
             }
@@ -100,7 +100,7 @@ contract StakeReturnGas is ERC20,Ownable {
         return _users;
     }
 
-    function getStakeUser(address _addr) public view returns(uint256 amount){
+    function getStakeUser(address _addr) public view returns (uint256 amount){
         return users[_addr].StakeAmount;
     }
 
