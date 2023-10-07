@@ -62,4 +62,6 @@ public interface GasOperateLogMapper
     public GasOperateLog selectGasOperateLast(GasOperateLog gasOperateLog);
 
     List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog);
+
+    List<String> selectAllUser();
 }

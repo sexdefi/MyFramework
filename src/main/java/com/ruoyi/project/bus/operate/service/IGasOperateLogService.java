@@ -64,4 +64,5 @@ public interface IGasOperateLogService
 
     public List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog);
 
+    public List<String> selectAllUser();
 }

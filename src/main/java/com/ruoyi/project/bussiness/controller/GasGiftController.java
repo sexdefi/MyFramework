@@ -27,10 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Controller
 @RequestMapping("/GasGift")
@@ -159,6 +156,34 @@ public class GasGiftController {
     }
 
 
+    // 查询master里面，所有用户及最新操作时间
+    @PostMapping("/getAllRemainGas")
+    @ResponseBody
+    @ApiOperation(value = "getAllRemainGas", notes = "获取所有待领取gas余额")
+    public String getAllRemainGas(){
+        // 查询所有用户地址，及最新操作时间
+        List<String> addresses = gasOperateLogService.selectAllUser();
+        // 循环调用_getGasAmount方法，获取gas余额
+        BigDecimal total = new BigDecimal(0);
+        StringBuffer sb = new StringBuffer();
+        for (String address : addresses) {
+            GasParamsLite params = new GasParamsLite();
+            params.setAddress(address);
+            String gasAmount = _getGasAmount(params, false);
+            if(gasAmount == null || gasAmount.isEmpty()){
+                gasAmount = "0";
+            }
+            total = total.add(new BigDecimal(gasAmount));
+            sb.append(address).append(" ").append(gasAmount).append("\n");
+        }
+
+        sb.append("total:").append(total.toString());
+        // 拼装stringbuffer，返回，按行换行
+
+        return sb.toString();
+    }
+
+
     public String _getGasAmount(@RequestBody GasParamsLite params, boolean isCheck) {
         // 从数据库中读取gas余额
         // 检索上次的操作，进行区别处理。存入缓存中。缓存有效期为10分钟，如果不存在，则从数据库中读取
@@ -193,17 +218,18 @@ public class GasGiftController {
             // 如果间隔小于1小时，则返回错误
             if (isCheck)
                 if (System.currentTimeMillis() / 1000 - lastTimeLong < 3600) {
-                    return null;
+                    return "0";
                 }
         } catch (Exception e) {
             lastTimeLong = 99999999999l;
         }
-        if (isCheck) {
+        // if (isCheck)
+        {
             if (lastOperation.equals("withdraw")) {
-                return null;
+                return "0";
             }
             if (!lastOperation.equals("stake") && !lastOperation.equals("gas")) {
-                return null;
+                return "0";
             }
         }
 

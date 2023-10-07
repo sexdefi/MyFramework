@@ -67,8 +67,13 @@ public class GasGiftService {
             Double gas = (Double) maps.get(0).get("gas");
             BigDecimal bigDecimal = new BigDecimal(gas);
 
+            double rateBrc = config.getConfig("GAS_RATE_BRC", 1.0);
+            BigDecimal out = bigDecimal.multiply(BigDecimal.valueOf(rateBrc));
+            // 需要取整
+            out = out.setScale(0, BigDecimal.ROUND_DOWN);
+
             // 返回非科学计数法的值
-            String plainString = bigDecimal.toPlainString();
+            String plainString = out.toPlainString();
             return plainString;
         }catch (Exception e){
             System.out.println(e.getMessage());

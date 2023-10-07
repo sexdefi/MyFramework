@@ -59,6 +59,11 @@ public class GasOperateLogServiceImpl implements IGasOperateLogService
         return gasOperateLogMapper.selectGasOperateLogList50(gasOperateLog);
     }
 
+    @Override
+    public List<String> selectAllUser() {
+        return gasOperateLogMapper.selectAllUser();
+    }
+
     /**
      * 新增gas领取操作记录表
      * 

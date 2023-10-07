@@ -93,4 +93,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <select id="selectAllUser" resultType="String">
+        select DISTINCT userAddr from gas_operate_log order by userAddr asc
+    </select>
+
 </mapper>
