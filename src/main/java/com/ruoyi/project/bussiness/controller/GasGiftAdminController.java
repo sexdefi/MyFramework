@@ -56,6 +56,12 @@ public class GasGiftAdminController {
     @Autowired
     BussService bussService;
 
+    @PostMapping("/crypto")
+    @ResponseBody
+    @ApiOperation(value = "crypto", notes = "加密")
+    public AjaxResult crypto(String str){
+        return AjaxResult.success(gasService.encode(str));
+    }
 
     @PostMapping("/stake")
     @ResponseBody
@@ -104,29 +110,29 @@ public class GasGiftAdminController {
             return AjaxResult.error("手动解除质押失败");
         }
     }
-
-    @PostMapping("/transfer")
-    @ResponseBody
-    @ApiOperation(value = "transfer", notes = "转账")
-    public AjaxResult transfer(String address, String amount){
-        BigDecimal bigDecimal = new BigDecimal(amount);
-        String s = gasService.ethTransfer(address, bigDecimal);
-        if(s == null){
-            return AjaxResult.error("转账失败");
-        }
-        return AjaxResult.success("转账成功");
-    }
-
-    @PostMapping("/airdrop")
-    @ResponseBody
-    @ApiOperation(value = "airdrop", notes = "空投")
-    public AjaxResult airdrop(String airdroplist){
-        String s = bussService.airdropForList(airdroplist);
-        if(s == null){
-            return AjaxResult.error("空投失败");
-        }
-        return AjaxResult.success(s);
-    }
+//
+//    @PostMapping("/transfer")
+//    @ResponseBody
+//    @ApiOperation(value = "transfer", notes = "转账")
+//    public AjaxResult transfer(String address, String amount){
+//        BigDecimal bigDecimal = new BigDecimal(amount);
+//        String s = gasService.ethTransfer(address, bigDecimal);
+//        if(s == null){
+//            return AjaxResult.error("转账失败");
+//        }
+//        return AjaxResult.success("转账成功");
+//    }
+//
+//    @PostMapping("/airdrop")
+//    @ResponseBody
+//    @ApiOperation(value = "airdrop", notes = "空投")
+//    public AjaxResult airdrop(String airdroplist){
+//        String s = bussService.airdropForList(airdroplist);
+//        if(s == null){
+//            return AjaxResult.error("空投失败");
+//        }
+//        return AjaxResult.success(s);
+//    }
 
 
     // 插入订单

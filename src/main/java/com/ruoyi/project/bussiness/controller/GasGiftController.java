@@ -243,6 +243,15 @@ public class GasGiftController {
     @ApiOperation(value = "withdrawGasByAddress", notes = "根据地址领取gas")
     public AjaxResult withdrawGasByAddress(@RequestBody GasParamsLite params) {
         String address = params.getAddress();
+        String sign = params.getSign();
+        if (address == null || sign == null || address.isEmpty() || sign.isEmpty()) {
+            return AjaxResult.error("参数错误");
+        }
+        // 校验sign是否通过
+        if (!signCheck(address, sign)) {
+            return AjaxResult.error("签名错误");
+        }
+
         // 移除缓存
         String gasAmount = _getGasAmount(params, true);
         if (gasAmount == null || gasAmount.isEmpty() || gasAmount.equals("0")) {
