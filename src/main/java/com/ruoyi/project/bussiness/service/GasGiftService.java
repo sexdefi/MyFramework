@@ -41,15 +41,16 @@ public class GasGiftService {
             "SELECT from_addr,sum(gas_used * gas_price) AS gas FROM transaction_info WHERE  from_addr = '%s' AND `TIMESTAMP` >= %d AND txstatus = '0x1' GROUP BY from_addr;";
 
     @DataSource(value = DataSourceType.SLAVE)
-    public String getGasAmount(String address, Long lastTimeLong) {
+    public String getGasAmount(String address,String tokenName, Long lastTimeLong) {
         try {
             // 如果lastTimeLong >= 当前时间，返回0
             if (lastTimeLong >= System.currentTimeMillis() / 1000) {
                 return "0";
             }
+            String stakeOpenTimeKey = "STAKE_OPEN_"+tokenName;
 
             // 计算开启时间，如果开启时间大于当前时间，返回0
-            long openTime = config.getConfig("GAS_GIFT_OPEN_TIME", 1696327200l);
+            long openTime = config.getConfig(stakeOpenTimeKey, 1796327200l);
             if (openTime > System.currentTimeMillis() / 1000) {
                 return "0";
             }
@@ -72,8 +73,10 @@ public class GasGiftService {
             // 这个地方，放在这里是不对的，等需要修改的时候，将这块儿代码放到controller里面，然后检查这个地址是否已经质押，如果质押brc则乘0。5，如果x10000就✖️0。4
             // 不能够用stake来统一，因为有可能stake了一个，另外一个取出了，所以不能用同一个记录。
             // 那就查两个表，或者在withdraw的时候，
-            double rateBrc = config.getConfig("GAS_RATE_BRC", 1.0);
-            BigDecimal out = bigDecimal.multiply(BigDecimal.valueOf(rateBrc));
+            String rateKey = "GAS_RATE_"+tokenName;
+
+            double rate = config.getConfig(rateKey, 0.1);
+            BigDecimal out = bigDecimal.multiply(BigDecimal.valueOf(rate));
             // 需要取整
             out = out.setScale(0, BigDecimal.ROUND_DOWN);
 
@@ -150,15 +153,17 @@ public class GasGiftService {
     }
 
     // load contract StakeBrc
-    private StakeBrc loadContract(Web3j web3j, Credentials credentials) {
-        String stakeAddr = config.getConfig("STAKE_CONTRACT", "");
+    private StakeBrc loadContract(Web3j web3j, Credentials credentials,String tokenName) {
+        String contractKey = "STAKE_CONTRACT_"+tokenName;
+        String stakeAddr = config.getConfig(contractKey, "");
         ContractGasProvider contractGasProvider = new StaticGasProvider(BigInteger.valueOf(210000), BigInteger.valueOf(1000000));
         StakeBrc stakeBrc = StakeBrc.load(stakeAddr, web3j, credentials, contractGasProvider);
         return stakeBrc;
     }
 
+
     // 调用stake的getStakeUser方法
-    public boolean getStakeUser(String address) {
+    public boolean getStakeUser(String address,String tokenName) {
         String url = config.getConfig("RPC", "https://rpc.bitchain.biz");
         Web3j web3j = getWeb3j();
         Credentials credentials = null;
@@ -172,7 +177,7 @@ public class GasGiftService {
                 return false;
             }
             credentials = Credentials.create(privateKey);
-            StakeBrc stakeBrc = loadContract(web3j, credentials);
+            StakeBrc stakeBrc = loadContract(web3j, credentials,tokenName);
             RemoteCall<BigInteger> stakeUser = stakeBrc.getStakeUser(address);
             BigInteger send = stakeUser.send();
             System.out.println("stakeUser:" + send);

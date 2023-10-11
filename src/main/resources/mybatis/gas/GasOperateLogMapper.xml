@@ -11,10 +11,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="amount"    column="amount"    />
         <result property="optime"    column="optime"    />
         <result property="remark"    column="remark"    />
+        <result property="token"    column="token"    />
+        <result property="chainid"    column="chainid"    />
     </resultMap>
 
     <sql id="selectGasOperateLogVo">
-        select id, userAddr, type, amount, optime, remark from gas_operate_log
+        select id, userAddr, type, amount, optime, remark, token, chainid from gas_operate_log
     </sql>
 
     <select id="selectGasOperateLogList" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
@@ -24,16 +26,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="type != null  and type != ''"> and type = #{type}</if>
             <if test="amount != null  and amount != ''"> and amount = #{amount}</if>
             <if test="optime != null  and optime != ''"> and optime = #{optime}</if>
+            <if test="remark != null  and remark != ''"> and remark = #{remark}</if>
+            <if test="token != null  and token != ''"> and token = #{token}</if>
+            <if test="chainid != null  and chainid != ''"> and chainid = #{chainid}</if>
         </where>
         order by id desc
     </select>
-
     <select id="selectGasOperateLogList50" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
         <include refid="selectGasOperateLogVo"/>
         <where>
             <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
-#            // 筛选type = withdraw 或者 type = stake的记录
+            <if test="token != null  and token != ''"> and token = #{token}</if>
             and (type = 'withdraw' or type = 'stake')
+        </where>
+        order by id asc limit 50
+    </select>
+    <select id="selectGasWithdrawLogList50" parameterType="GasOperateLog" resultMap="GasOperateLogResult">
+        <include refid="selectGasOperateLogVo"/>
+        <where>
+            <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
+            <if test="token != null  and token != ''"> and token = #{token}</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
         </where>
         order by id asc limit 50
     </select>
@@ -42,11 +55,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectGasOperateLogVo"/>
         <where>
             <if test="userAddr != null  and userAddr != ''"> and userAddr = #{userAddr}</if>
+            <if test="token != null  and token != ''"> and token = #{token}</if>
             <if test="type != null  and type != ''"> and type = #{type}</if>
         </where>
         order by id desc limit 1
     </select>
-    
+
+    <select id="selectAllUser" resultType="String">
+        select DISTINCT userAddr from gas_operate_log order by userAddr asc
+    </select>
+
+
     <select id="selectGasOperateLogById" parameterType="Long" resultMap="GasOperateLogResult">
         <include refid="selectGasOperateLogVo"/>
         where id = #{id}
@@ -60,6 +79,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="amount != null">amount,</if>
             <if test="optime != null">optime,</if>
             <if test="remark != null">remark,</if>
+            <if test="token != null">token,</if>
+            <if test="chainid != null">chainid,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userAddr != null">#{userAddr},</if>
@@ -67,6 +88,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="amount != null">#{amount},</if>
             <if test="optime != null">#{optime},</if>
             <if test="remark != null">#{remark},</if>
+            <if test="token != null">#{token},</if>
+            <if test="chainid != null">#{chainid},</if>
          </trim>
     </insert>
 
@@ -78,6 +101,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="amount != null">amount = #{amount},</if>
             <if test="optime != null">optime = #{optime},</if>
             <if test="remark != null">remark = #{remark},</if>
+            <if test="token != null">token = #{token},</if>
+            <if test="chainid != null">chainid = #{chainid},</if>
         </trim>
         where id = #{id}
     </update>
@@ -92,9 +117,5 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
-
-    <select id="selectAllUser" resultType="String">
-        select DISTINCT userAddr from gas_operate_log order by userAddr asc
-    </select>
 
 </mapper>

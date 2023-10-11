@@ -3,18 +3,12 @@ package com.ruoyi.project.bussiness.controller;
 import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
 import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import com.ruoyi.framework.web.domain.AjaxResult;
-import com.ruoyi.project.Utils.SignValiditor;
 import com.ruoyi.project.bus.operate.domain.GasOperateLog;
 import com.ruoyi.project.bus.operate.service.IGasOperateLogService;
 import com.ruoyi.project.bus.order.domain.GasWithdrawLog;
 import com.ruoyi.project.bus.order.service.IGasWithdrawLogService;
-import com.ruoyi.project.bus.transferLog.domain.GasTransferLog;
 import com.ruoyi.project.bus.transferLog.service.IGasTransferLogService;
 import com.ruoyi.project.bussiness.common.BusConfigService;
-import com.ruoyi.project.bussiness.entity.GasParams;
-import com.ruoyi.project.bussiness.entity.GasParamsLite;
-import com.ruoyi.project.bussiness.entity.OperateLogVO;
-import com.ruoyi.project.bussiness.entity.TransferLogVO;
 import com.ruoyi.project.bussiness.service.BussService;
 import com.ruoyi.project.bussiness.service.GasGiftService;
 import io.swagger.annotations.Api;
@@ -22,15 +16,10 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 
 @Controller
 @RequestMapping("/GasGiftAdmin")

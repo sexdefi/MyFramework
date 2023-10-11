@@ -9,7 +9,7 @@ import com.ruoyi.framework.web.domain.BaseEntity;
  * gas领取操作记录表对象 gas_operate_log
  * 
  * @author ruoyi
- * @date 2023-09-25
+ * @date 2023-10-11
  */
 public class GasOperateLog extends BaseEntity
 {
@@ -33,6 +33,14 @@ public class GasOperateLog extends BaseEntity
     /** 操作时间 */
     @Excel(name = "操作时间")
     private String optime;
+
+    /** 代币名称 */
+    @Excel(name = "代币名称")
+    private String token;
+
+    /** 链 */
+    @Excel(name = "链")
+    private String chainid;
 
     public void setId(Long id)
     {
@@ -79,6 +87,24 @@ public class GasOperateLog extends BaseEntity
     {
         return optime;
     }
+    public void setToken(String token)
+    {
+        this.token = token;
+    }
+
+    public String getToken()
+    {
+        return token;
+    }
+    public void setChainid(String chainid)
+    {
+        this.chainid = chainid;
+    }
+
+    public String getChainid()
+    {
+        return chainid;
+    }
 
     @Override
     public String toString() {
@@ -89,6 +115,8 @@ public class GasOperateLog extends BaseEntity
             .append("amount", getAmount())
             .append("optime", getOptime())
             .append("remark", getRemark())
+            .append("token", getToken())
+            .append("chainid", getChainid())
             .toString();
     }
 }

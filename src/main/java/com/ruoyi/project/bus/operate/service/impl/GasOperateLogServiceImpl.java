@@ -1,9 +1,6 @@
 package com.ruoyi.project.bus.operate.service.impl;
 
 import java.util.List;
-
-import com.ruoyi.framework.aspectj.lang.annotation.DataSource;
-import com.ruoyi.framework.aspectj.lang.enums.DataSourceType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.bus.operate.mapper.GasOperateLogMapper;
@@ -15,10 +12,9 @@ import com.ruoyi.common.utils.text.Convert;
  * gas领取操作记录表Service业务层处理
  * 
  * @author ruoyi
- * @date 2023-09-25
+ * @date 2023-10-11
  */
 @Service
-@DataSource(value = DataSourceType.MASTER)
 public class GasOperateLogServiceImpl implements IGasOperateLogService 
 {
     @Autowired
@@ -46,22 +42,6 @@ public class GasOperateLogServiceImpl implements IGasOperateLogService
     public List<GasOperateLog> selectGasOperateLogList(GasOperateLog gasOperateLog)
     {
         return gasOperateLogMapper.selectGasOperateLogList(gasOperateLog);
-    }
-
-    @Override
-    public GasOperateLog selectGasOperateLast(GasOperateLog gasOperateLog)
-    {
-        return gasOperateLogMapper.selectGasOperateLast(gasOperateLog);
-    }
-
-    @Override
-    public List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog) {
-        return gasOperateLogMapper.selectGasOperateLogList50(gasOperateLog);
-    }
-
-    @Override
-    public List<String> selectAllUser() {
-        return gasOperateLogMapper.selectAllUser();
     }
 
     /**
@@ -111,4 +91,26 @@ public class GasOperateLogServiceImpl implements IGasOperateLogService
     {
         return gasOperateLogMapper.deleteGasOperateLogById(id);
     }
+
+    @Override
+    public GasOperateLog selectGasOperateLast(GasOperateLog gasOperateLog)
+    {
+        return gasOperateLogMapper.selectGasOperateLast(gasOperateLog);
+    }
+
+    @Override
+    public List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog) {
+        return gasOperateLogMapper.selectGasOperateLogList50(gasOperateLog);
+    }
+
+    //selectGasWithdrawLogList50
+    @Override
+    public List<GasOperateLog> selectGasWithdrawLogList50(GasOperateLog gasOperateLog) {
+        return gasOperateLogMapper.selectGasWithdrawLogList50(gasOperateLog);
+    }
+    @Override
+    public List<String> selectAllUser() {
+        return gasOperateLogMapper.selectAllUser();
+    }
+
 }

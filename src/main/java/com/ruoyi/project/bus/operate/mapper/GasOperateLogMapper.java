@@ -7,7 +7,7 @@ import com.ruoyi.project.bus.operate.domain.GasOperateLog;
  * gas领取操作记录表Mapper接口
  * 
  * @author ruoyi
- * @date 2023-09-25
+ * @date 2023-10-11
  */
 public interface GasOperateLogMapper 
 {
@@ -64,4 +64,7 @@ public interface GasOperateLogMapper
     List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog);
 
     List<String> selectAllUser();
+
+    //selectGasWithdrawLogList50
+    List<GasOperateLog> selectGasWithdrawLogList50(GasOperateLog gasOperateLog);
 }

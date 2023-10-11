@@ -7,7 +7,7 @@ import com.ruoyi.project.bus.operate.domain.GasOperateLog;
  * gas领取操作记录表Service接口
  * 
  * @author ruoyi
- * @date 2023-09-25
+ * @date 2023-10-11
  */
 public interface IGasOperateLogService 
 {
@@ -59,10 +59,11 @@ public interface IGasOperateLogService
      */
     public int deleteGasOperateLogById(Long id);
 
-
     public GasOperateLog selectGasOperateLast(GasOperateLog gasOperateLog);
 
     public List<GasOperateLog> selectGasOperateLogList50(GasOperateLog gasOperateLog);
 
     public List<String> selectAllUser();
+
+    public List<GasOperateLog> selectGasWithdrawLogList50(GasOperateLog gasOperateLog);
 }

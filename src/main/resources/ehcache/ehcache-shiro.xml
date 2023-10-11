@@ -118,5 +118,13 @@
            overflowToDisk="false"
            statistics="false"
     />
+    <cache name="balance10000"
+           timeToIdleSeconds="0"
+           timeToLiveSeconds="600"
+           eternal="false"
+           maxEntriesLocalHeap="100000"
+           overflowToDisk="false"
+           statistics="false"
+    />
 </ehcache>
 	
