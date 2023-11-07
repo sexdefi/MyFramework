@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.swap.ad.mapper.AdConfigMapper">
+    
+    <resultMap type="AdConfig" id="AdConfigResult">
+        <result property="id"    column="id"    />
+        <result property="title"    column="title"    />
+        <result property="des"    column="des"    />
+        <result property="jumpUrl"    column="jump_url"    />
+        <result property="image"    column="image"    />
+        <result property="classification"    column="classification"    />
+        <result property="weights"    column="weights"    />
+        <result property="dataStatus"    column="data_status"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectAdConfigVo">
+        select id, title, des, jump_url, image, classification, weights, data_status, create_time, update_time from ad_config
+    </sql>
+
+    <select id="selectAdConfigList" parameterType="AdConfig" resultMap="AdConfigResult">
+        <include refid="selectAdConfigVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="des != null  and des != ''"> and des = #{des}</if>
+            <if test="jumpUrl != null  and jumpUrl != ''"> and jump_url = #{jumpUrl}</if>
+            <if test="image != null  and image != ''"> and image = #{image}</if>
+            <if test="classification != null  and classification != ''"> and classification = #{classification}</if>
+            <if test="weights != null "> and weights = #{weights}</if>
+            <if test="dataStatus != null "> and data_status = #{dataStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectAdConfigById" parameterType="Long" resultMap="AdConfigResult">
+        <include refid="selectAdConfigVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertAdConfig" parameterType="AdConfig" useGeneratedKeys="true" keyProperty="id">
+        insert into ad_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null">title,</if>
+            <if test="des != null">des,</if>
+            <if test="jumpUrl != null">jump_url,</if>
+            <if test="image != null">image,</if>
+            <if test="classification != null">classification,</if>
+            <if test="weights != null">weights,</if>
+            <if test="dataStatus != null">data_status,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null">#{title},</if>
+            <if test="des != null">#{des},</if>
+            <if test="jumpUrl != null">#{jumpUrl},</if>
+            <if test="image != null">#{image},</if>
+            <if test="classification != null">#{classification},</if>
+            <if test="weights != null">#{weights},</if>
+            <if test="dataStatus != null">#{dataStatus},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAdConfig" parameterType="AdConfig">
+        update ad_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title = #{title},</if>
+            <if test="des != null">des = #{des},</if>
+            <if test="jumpUrl != null">jump_url = #{jumpUrl},</if>
+            <if test="image != null">image = #{image},</if>
+            <if test="classification != null">classification = #{classification},</if>
+            <if test="weights != null">weights = #{weights},</if>
+            <if test="dataStatus != null">data_status = #{dataStatus},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteAdConfigById" parameterType="Long">
+        delete from ad_config where id = #{id}
+    </delete>
+
+    <delete id="deleteAdConfigByIds" parameterType="String">
+        delete from ad_config where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

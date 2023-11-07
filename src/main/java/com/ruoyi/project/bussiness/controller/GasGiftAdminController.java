@@ -17,14 +17,13 @@ import com.ruoyi.project.bussiness.entity.OperateLogVO;
 import com.ruoyi.project.bussiness.entity.TransferLogVO;
 import com.ruoyi.project.bussiness.service.BussService;
 import com.ruoyi.project.bussiness.service.GasGiftService;
+import com.ruoyi.project.swap.ad.domain.AdConfig;
+import com.ruoyi.project.swap.ad.service.IAdConfigService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -55,6 +54,9 @@ public class GasGiftAdminController {
 
     @Autowired
     BussService bussService;
+
+    @Autowired
+    IAdConfigService adConfigService;
 
     @PostMapping("/crypto")
     @ResponseBody
@@ -147,4 +149,31 @@ public class GasGiftAdminController {
         return i > 0;
     }
 
+
+    //用这个json生成数据库create语句
+    //{"code":0,"msg":"ok","data":[{"id":8,"title":"Cloak","des":"审核资料","jumpUrl":"https://swap.maplesales.org/swap","image":"https://statics.maplesales.org/s3/maplesale/swap.jpg","classification":"swap","weights":0,"dataStatus":1,"createTime":1661416510000,"updateTime":1661416513000},{"id":9,"title":"Cloak","des":"审核资料","jumpUrl":"https://www.maplesales.org/","image":"https://dhzzgq6xv1wux.cloudfront.net/s3/maplesale/maplev2.jpg","classification":"swap","weights":0,"dataStatus":1,"createTime":1661416510000,"updateTime":1661416513000}]}
+    //mysql语句如下：
+    //CREATE TABLE `ad_config` (
+    //  `id` int(11) NOT NULL AUTO_INCREMENT,
+    //  `title` varchar(255) DEFAULT NULL,
+    //  `des` varchar(255) DEFAULT NULL,
+    //  `jump_url` varchar(255) DEFAULT NULL,
+    //  `image` varchar(255) DEFAULT NULL,
+    //  `classification` varchar(255) DEFAULT NULL,
+    //  `weights` int(11) DEFAULT NULL,
+    //  `data_status` int(11) DEFAULT NULL,
+    //  `create_time` datetime DEFAULT NULL,
+    //  `update_time` datetime DEFAULT NULL,
+    //  PRIMARY KEY (`id`)
+    //) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+    @GetMapping("/adlist")
+    @ResponseBody
+    @ApiOperation(value = "adlist", notes = "广告列表")
+    public AjaxResult adlist(@RequestParam String classification) {
+        AdConfig adConfig = new AdConfig();
+        adConfig.setClassification(classification);
+        adConfig.setDataStatus(1l);
+        List<AdConfig> adConfigs = adConfigService.selectAdConfigList(adConfig);
+        return AjaxResult.success(adConfigs);
+    }
 }
