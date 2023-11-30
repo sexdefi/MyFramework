@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.bus.coinlist.mapper.RateCoinMapper">
+    
+    <resultMap type="RateCoin" id="RateCoinResult">
+        <result property="id"    column="id"    />
+        <result property="coinName"    column="coin_name"    />
+        <result property="tokenAddress"    column="token_address"    />
+        <result property="dataStatus"    column="data_status"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="chainType"    column="chain_type"    />
+    </resultMap>
+
+    <sql id="selectRateCoinVo">
+        select id, coin_name, token_address, data_status, create_time, update_time, chain_type from rate_coin
+    </sql>
+
+    <select id="selectRateCoinList" parameterType="RateCoin" resultMap="RateCoinResult">
+        <include refid="selectRateCoinVo"/>
+        <where>  
+            <if test="coinName != null  and coinName != ''"> and coin_name like concat('%', #{coinName}, '%')</if>
+            <if test="tokenAddress != null  and tokenAddress != ''"> and token_address = #{tokenAddress}</if>
+            <if test="dataStatus != null "> and data_status = #{dataStatus}</if>
+            <if test="chainType != null  and chainType != ''"> and chain_type = #{chainType}</if>
+        </where>
+    </select>
+    
+    <select id="selectRateCoinById" parameterType="Long" resultMap="RateCoinResult">
+        <include refid="selectRateCoinVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertRateCoin" parameterType="RateCoin" useGeneratedKeys="true" keyProperty="id">
+        insert into rate_coin
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="coinName != null">coin_name,</if>
+            <if test="tokenAddress != null">token_address,</if>
+            <if test="dataStatus != null">data_status,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="chainType != null">chain_type,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="coinName != null">#{coinName},</if>
+            <if test="tokenAddress != null">#{tokenAddress},</if>
+            <if test="dataStatus != null">#{dataStatus},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="chainType != null">#{chainType},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRateCoin" parameterType="RateCoin">
+        update rate_coin
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="coinName != null">coin_name = #{coinName},</if>
+            <if test="tokenAddress != null">token_address = #{tokenAddress},</if>
+            <if test="dataStatus != null">data_status = #{dataStatus},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="chainType != null">chain_type = #{chainType},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRateCoinById" parameterType="Long">
+        delete from rate_coin where id = #{id}
+    </delete>
+
+    <delete id="deleteRateCoinByIds" parameterType="String">
+        delete from rate_coin where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

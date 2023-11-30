@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('修改有费率的币')" />
+</head>
+<body class="white-bg">
+    <div class="wrapper wrapper-content animated fadeInRight ibox-content">
+        <form class="form-horizontal m" id="form-coinlist-edit" th:object="${rateCoin}">
+            <input name="id" th:field="*{id}" type="hidden">
+            <div class="form-group">    
+                <label class="col-sm-3 control-label">币地址：</label>
+                <div class="col-sm-8">
+                    <input name="coinName" th:field="*{coinName}" class="form-control" type="text">
+                </div>
+            </div>
+            <div class="form-group">    
+                <label class="col-sm-3 control-label">钱包地址：</label>
+                <div class="col-sm-8">
+                    <input name="tokenAddress" th:field="*{tokenAddress}" class="form-control" type="text">
+                </div>
+            </div>
+            <div class="form-group">    
+                <label class="col-sm-3 control-label">数据状态:1，有效，0，无效：</label>
+                <div class="col-sm-8">
+                    <input name="dataStatus" th:field="*{dataStatus}" class="form-control" type="text">
+                </div>
+            </div>
+            <div class="form-group">    
+                <label class="col-sm-3 control-label">链：</label>
+                <div class="col-sm-8">
+                    <input name="chainType" th:field="*{chainType}" class="form-control" type="text">
+                </div>
+            </div>
+        </form>
+    </div>
+    <th:block th:include="include :: footer" />
+    <script th:inline="javascript">
+        var prefix = ctx + "swap/coinlist";
+        $("#form-coinlist-edit").validate({
+            focusCleanup: true
+        });
+
+        function submitHandler() {
+            if ($.validate.form()) {
+                $.operate.save(prefix + "/edit", $('#form-coinlist-edit').serialize());
+            }
+        }
+    </script>
+</body>
+</html>
