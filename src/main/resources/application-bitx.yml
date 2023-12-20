@@ -1,8 +1,7 @@
 # 数据源配置
 server:
     # 服务器的HTTP端口，默认为80
-    port: 8090
-
+    port: 8091
 spring:
     datasource:
         type: com.alibaba.druid.pool.DruidDataSource
@@ -11,7 +10,7 @@ spring:
             # 主库数据源
             master:
 #                url: jdbc:mysql://18.163.113.145:9306/ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-                url: jdbc:mysql://localhost:9306/ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+                url: jdbc:mysql://localhost:9306/ry2?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
                 username: root
                 password: shjblockchain
             # 从库数据源
@@ -48,7 +47,7 @@ spring:
             webStatFilter: 
                 enabled: true
             statViewServlet:
-                enabled: true
+                enabled: false
                 # 设置白名单，不填则允许所有访问
                 allow:
                 url-pattern: /druid/*
